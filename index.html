@@ -26,7 +26,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;700;800&family=Azeret+Mono:wght@300;400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&family=Azeret+Mono:wght@300;400;500;700&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -159,10 +159,13 @@
         overflow: hidden;
         height: 100vh;
       }
+      /* Panel narzędzia wg manifestu: pełne tło --bg2, ostre krawędzie (brak
+         zaokrągleń), 1px border. Bez backdrop-filter — manifest: narzędzia
+         rezygnują z filtrów/grain na rzecz mocy dla WebAudio (sekcja 01/08). */
       .glass {
-        background: rgba(15, 18, 13, 0.6);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(240, 235, 224, 0.08);
+        background: #12150F;
+        border: 1px solid rgba(240, 235, 224, 0.14);
+        border-radius: 0;
       }
       .indicator-glow {
         box-shadow: 0 0 15px rgba(255, 171, 0, 0.5);
@@ -170,12 +173,106 @@
       input[type="range"] {
         @apply h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#00E5CC];
       }
-      /* Select wg manifestu: tło --bg2, tekst --cream, focus cyan. */
+
+      /* ===== Przyciski — DOKŁADNIE wg manifestu (sekcja 05, brak zaokrągleń) ===== */
+      /* Primary: Lexend 600, tło cyan, tekst czarny, padding 14/24, min-h 44, radius 0 */
+      .btn-primary {
+        font-family: "Lexend", sans-serif;
+        font-weight: 600;
+        font-size: 0.85rem;
+        background: #00E5CC;
+        color: #0A0C08;
+        border: none;
+        border-radius: 0;
+        padding: 14px 24px;
+        min-height: 44px;
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+      }
+      .btn-primary:hover { opacity: 0.85; }
+      .btn-primary:active { opacity: 0.7; }
+      /* Secondary: transparent, border 1px, tekst cream; hover border+tekst cyan */
+      .btn-secondary {
+        font-family: "Lexend", sans-serif;
+        font-weight: 600;
+        font-size: 0.85rem;
+        background: transparent;
+        color: #F0EBE0;
+        border: 1px solid rgba(240, 235, 224, 0.14);
+        border-radius: 0;
+        padding: 14px 24px;
+        min-height: 44px;
+        cursor: pointer;
+        transition: border-color 0.2s ease, color 0.2s ease;
+      }
+      .btn-secondary:hover { border-color: #00E5CC; color: #00E5CC; }
+      .btn-secondary:active { opacity: 0.7; }
+      /* Toggle „odtwarzanie" — dwa stany barwy (pkt 4). Idle = secondary cyan
+         outline; Active = primary cyan filled. */
+      .btn-toggle {
+        font-family: "Lexend", sans-serif;
+        font-weight: 600;
+        font-size: 0.85rem;
+        border-radius: 0;
+        padding: 14px 24px;
+        min-height: 44px;
+        width: 100%;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+      }
+      .btn-toggle.is-idle {
+        background: transparent;
+        color: #00E5CC;
+        border: 1px solid rgba(0, 229, 204, 0.5);
+      }
+      .btn-toggle.is-idle:hover { background: rgba(0, 229, 204, 0.1); }
+      .btn-toggle.is-active {
+        background: #00E5CC;
+        color: #0A0C08;
+        border: 1px solid #00E5CC;
+      }
+      .btn-toggle.is-active:hover { opacity: 0.85; }
+
+      /* ===== Minimalny nagłówek narzędzia (manifest sekcja 08) ===== */
+      .tool-back {
+        font-family: "Azeret Mono", monospace;
+        font-size: 0.72rem;
+        color: #9C9890;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border: 1px solid rgba(240, 235, 224, 0.14);
+        transition: color 0.2s ease, border-color 0.2s ease;
+      }
+      .tool-back:hover { color: #F0EBE0; border-color: #9C9890; }
+      /* Ghost inline (manifest sekcja 05 — wariant Ghost) */
+      .btn-ghost-inline {
+        display: inline-block;
+        font-family: "Azeret Mono", monospace;
+        font-weight: 500;
+        font-size: 0.72rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #9c9890;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        transition: color 0.2s ease;
+      }
+      .btn-ghost-inline:hover { color: #f0ebe0; }
+
+      /* Select wg manifestu: tło --bg2, tekst --cream, focus cyan, brak zaokrągleń. */
       select {
-        @apply border rounded-lg px-3 text-sm outline-none;
+        @apply border px-3 text-sm outline-none;
         background-color: #12150F;
         color: #F0EBE0;
         border-color: rgba(240, 235, 224, 0.14);
+        border-radius: 0;
         min-height: 44px;
         font-family: "Azeret Mono", monospace;
       }
@@ -220,64 +317,53 @@
     </style>
   </head>
   <body class="flex flex-col h-screen overflow-hidden">
-    <!-- Górna belka narzędzia (SAL Design Manifest v3.0 — Tool header) -->
+    <!-- Minimalny nagłówek narzędzia (SAL Design Manifest v3.0 — sekcja 08).
+         LEWO: przycisk „← Hub" + nazwa narzędzia (oddzielona lewą krawędzią).
+         PRAWO: status Audio Context. Brak acid — acid tylko w Hubie. -->
     <header
-      class="flex items-center justify-between gap-4 flex-wrap px-6 py-3 border-b border-[rgba(240,235,224,0.08)] bg-[rgba(10,12,8,0.92)] backdrop-blur-md z-40 flex-shrink-0"
+      class="flex items-center justify-between gap-4 flex-wrap flex-shrink-0"
+      style="
+        background: #0a0c08;
+        border-bottom: 1px solid rgba(240, 235, 224, 0.14);
+        padding: 16px 24px;
+      "
     >
-      <div class="flex items-center gap-4">
-        <a
-          href="/"
-          class="flex items-center gap-2"
-          title="Powrót do Hubu"
-        >
-          <img src="assets/brand/icon-192.png" alt="SAL" class="w-6 h-6 rounded" />
-          <span class="font-semibold text-sm text-[#F0EBE0]"
-            >Spatial Audio <span class="text-[#BEFF00]">Lab</span></span
-          >
-        </a>
+      <div class="flex items-center" style="gap: 16px">
+        <a href="/" class="tool-back" title="Powrót do Hubu">← Hub</a>
         <span
-          class="pl-4 border-l border-[rgba(240,235,224,0.14)] font-mono text-[11px] uppercase tracking-[0.15em] text-[#9C9890]"
+          style="
+            font-family: 'Lexend', sans-serif;
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: #f0ebe0;
+            padding-left: 16px;
+            border-left: 1px solid rgba(240, 235, 224, 0.14);
+          "
           >Sekwencer 3D</span
         >
       </div>
-      <div class="flex items-center gap-3">
-        <a
-          href="/"
-          class="font-mono text-[11px] uppercase tracking-[0.1em] text-[#9C9890] hover:text-[#F0EBE0] hover:border-[#9C9890] px-3 py-2 border border-[rgba(240,235,224,0.14)] rounded-lg transition-colors"
-          >← Hub</a
-        >
-        <div class="flex items-center gap-2 font-mono text-[11px] text-[#9C9890]">
-          <span
-            id="acStatusDot"
-            class="w-2 h-2 rounded-full bg-[#9C9890] transition-all"
-          ></span>
-          <span id="acStatus">Audio Context: Idle</span>
-        </div>
+      <div
+        class="flex items-center"
+        style="
+          gap: 8px;
+          font-family: 'Azeret Mono', monospace;
+          font-size: 0.68rem;
+          color: #9c9890;
+        "
+      >
+        <span
+          id="acStatusDot"
+          style="
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9c9890;
+            transition: all 0.2s ease;
+          "
+        ></span>
+        <span id="acStatus">Audio Context: Idle</span>
       </div>
     </header>
-
-    <!-- Start Overlay -->
-    <div
-      id="startOverlay"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-[#0A0C08]"
-    >
-      <div class="text-center p-8 glass rounded-[40px] max-w-md">
-        <h1
-          class="text-5xl font-bold mb-4 text-[#FFAB00]"
-        >
-          Sekwencer 3D
-        </h1>
-        <p class="text-slate-400 mb-8 leading-relaxed">
-          System projektowania trajektorii dźwięku HRTF w czasie rzeczywistym.
-        </p>
-        <button
-          id="btnStart"
-          class="w-full py-4 bg-[#00E5CC] hover:bg-[#33ECD8] text-black font-bold rounded-2xl transition-all transform hover:scale-105 active:scale-95"
-        >
-          Uruchom System
-        </button>
-      </div>
-    </div>
 
     <main
       class="flex-1 min-h-0 w-full flex items-center justify-center p-4 md:p-6 overflow-hidden"
@@ -290,7 +376,7 @@
         class="lg:col-span-4 lg:order-2 flex flex-col gap-6 overflow-y-auto pr-2 custom-scroll"
       >
         <!-- Sekcja: Geometria -->
-        <div class="glass p-6 rounded-[28px] flex flex-col gap-5">
+        <div class="glass p-6 flex flex-col gap-5">
           <div class="flex items-center justify-between">
             <h2
               class="text-xs font-mono font-semibold text-[#00E5CC] uppercase tracking-[0.2em]"
@@ -299,7 +385,7 @@
             </h2>
             <div
               id="audioIndicator"
-              class="w-2.5 h-2.5 rounded-full bg-[#FF3355] shadow-[0_0_10px_rgba(255,51,85,0.5)]"
+              class="w-2.5 h-2.5 rounded-full bg-[#9C9890] transition-all"
             ></div>
           </div>
 
@@ -367,10 +453,7 @@
                 class="text-[10px] font-mono text-[#9C9890] uppercase tracking-[0.15em] mb-2 block"
                 >Kierunek</label
               >
-              <button
-                id="btnDirection"
-                class="w-full min-h-[44px] py-3 bg-[#12150F] border border-[rgba(240,235,224,0.14)] rounded-xl text-[11px] font-mono font-medium uppercase tracking-[0.1em] text-[#F0EBE0] hover:border-[#00E5CC] hover:text-[#00E5CC] transition-colors"
-              >
+              <button id="btnDirection" class="btn-secondary w-full">
                 Zgodnie z wskaz.
               </button>
             </div>
@@ -378,7 +461,7 @@
         </div>
 
         <!-- Sekcja: Orientacja i Barwa -->
-        <div class="glass p-6 rounded-[28px] flex flex-col gap-5">
+        <div class="glass p-6 flex flex-col gap-5">
           <h2
             class="text-xs font-mono font-semibold text-[#00E5CC] uppercase tracking-[0.2em]"
           >
@@ -440,19 +523,103 @@
                 <option value="square">Prostokątna (Cyfrowa)</option>
               </select>
             </div>
-            <button
-              id="btnToggleAudio"
-              class="w-full min-h-[44px] py-4 bg-[#00E5CC]/10 border border-[#00E5CC]/50 text-[#00E5CC] rounded-2xl hover:bg-[#00E5CC]/20 transition-all font-bold uppercase tracking-[0.2em] text-xs"
-            >
-              ODTWÓRZ / WYCISZ
+            <button id="btnToggleAudio" class="btn-toggle is-idle">
+              ODTWÓRZ
             </button>
+          </div>
+        </div>
+
+        <!-- Sekcja: Źródło i nagrywanie -->
+        <div class="glass p-6 flex flex-col gap-5">
+          <h2
+            class="text-xs font-mono font-semibold text-[#00E5CC] uppercase tracking-[0.2em]"
+          >
+            Źródło i nagrywanie
+          </h2>
+
+          <div class="space-y-5">
+            <!-- Własny dźwięk w pętli -->
+            <div>
+              <label
+                class="text-[10px] font-mono text-[#9C9890] uppercase tracking-[0.15em] mb-2 block"
+                >Własny dźwięk (pętla)</label
+              >
+              <input
+                id="fileInput"
+                type="file"
+                accept="audio/*,.opus,.mp3,.wav,.ogg,.flac,.m4a,.aac"
+                style="display: none"
+              />
+              <button id="btnLoadFile" class="btn-secondary w-full">
+                Wczytaj plik audio…
+              </button>
+              <div
+                id="srcInfo"
+                class="mt-2 font-mono text-[11px] text-[#9C9890]"
+              >
+                Źródło: synteza (oscylator)
+              </div>
+              <button
+                id="btnClearFile"
+                class="btn-ghost-inline mt-2"
+                style="display: none"
+              >
+                ↺ Wróć do syntezy
+              </button>
+            </div>
+
+            <!-- Liczba powtórzeń figury -->
+            <div>
+              <label
+                class="text-[10px] font-mono text-[#9C9890] uppercase tracking-[0.15em] mb-2 block"
+                >Powtórzenia figury (nagranie)</label
+              >
+              <div class="flex items-center gap-4 min-h-[44px]">
+                <input
+                  type="range"
+                  id="repsRange"
+                  min="1"
+                  max="16"
+                  step="1"
+                  value="2"
+                  class="flex-1"
+                />
+                <span
+                  class="font-mono text-sm text-[#00E5CC] min-w-[64px] text-right"
+                  ><span id="repsVal">2</span>×</span
+                >
+              </div>
+            </div>
+
+            <!-- Format nagrania -->
+            <div>
+              <label
+                class="text-[10px] font-mono text-[#9C9890] uppercase tracking-[0.15em] mb-2 block"
+                >Format nagrania</label
+              >
+              <select id="recFormat" class="w-full">
+                <option value="binaural">Binauralny (stereo WAV)</option>
+                <option value="ambix">
+                  Ambisoniczny FOA — AmbiX (4 ścieżki WAV)
+                </option>
+              </select>
+            </div>
+
+            <button id="btnRecord" class="btn-secondary w-full">
+              <span style="color: #ff3355">●</span> Nagraj do pliku WAV
+            </button>
+            <div
+              id="recStatus"
+              class="font-mono text-[11px] text-[#9C9890]"
+              style="min-height: 16px"
+            ></div>
           </div>
         </div>
       </div>
 
       <!-- LEWO: Główny ekran wizualizacji — Radar i Oś Pionowa (order-1 na desktopie) -->
       <div
-        class="lg:col-span-8 lg:order-1 glass rounded-[36px] relative p-8 md:p-12 flex flex-col items-center justify-center"
+        class="lg:col-span-8 lg:order-1 glass relative p-8 md:p-12 flex flex-col items-center justify-center"
       >
         <div
           class="relative w-full h-full flex items-center justify-center gap-12"
@@ -461,7 +628,7 @@
           <div class="relative">
             <canvas
               id="radarCanvas"
-              class="max-w-full aspect-square bg-[#0A0C08]/70 rounded-full border border-white/5 shadow-2xl"
+              class="block bg-[#0A0C08]/70 border border-white/5"
             ></canvas>
 
             <!-- Etykiety kierunków (Zgodne z Web Audio) -->
@@ -519,7 +686,7 @@
 
         <!-- Debug Info / Coordinates -->
         <div
-          class="absolute bottom-10 left-12 font-mono text-[10px] text-slate-500 space-y-2 bg-black/30 p-4 rounded-2xl border border-white/5"
+          class="absolute bottom-10 left-12 font-mono text-[10px] text-slate-500 space-y-2 bg-black/30 p-4 border border-white/5"
         >
           <div id="debugCoords" class="text-[#FFAB00]">
             XYZ: [0.00, 0.00, 0.00]
@@ -536,11 +703,17 @@
     </main>
 
     <script>
+      // ===== STAN =====
       const state = {
         ctx: null,
         panner: null,
-        osc: null,
         gain: null,
+        filter: null,
+        srcNode: null, // aktualne źródło (oscylator lub bufferSource)
+        buffer: null, // wczytany plik audio (AudioBuffer)
+        mode: "synth", // 'synth' | 'file'
+        fileName: "",
+        recFormat: "binaural",
         isRunning: false,
         audioActive: false,
 
@@ -551,6 +724,7 @@
         rotX: 0,
         rotY: 0,
         waveform: "triangle",
+        reps: 2,
 
         time: 0,
         pos: { x: 0, y: 0, z: 0 },
@@ -558,6 +732,11 @@
         canvas: null,
         canvasCtx: null,
       }
+
+      // Zakres mapowania radaru [m -> połowa kadru]. 85 m mieści figurę o skali 55
+      // nawet w narożnikach kwadratu (55*sqrt2 ≈ 78 m) — punkt nigdy nie ucieka z kadru.
+      const VIEW_RANGE = 85
+      const MAX_DUR = 180 // limit długości nagrania [s] (ochrona pamięci)
 
       // --- MATEMATYKA TRANSFORMACJI ---
       const Math3D = {
@@ -579,7 +758,7 @@
         circle: (t) => ({ x: Math.cos(t), y: 0, z: Math.sin(t) }),
         square: (t) => {
           const cycle = (t % (Math.PI * 2)) / (Math.PI * 2)
-          const progress = cycle * 4
+          const progress = (cycle < 0 ? cycle + 1 : cycle) * 4
           const side = Math.floor(progress)
           const lt = progress - side
           if (side === 0) return { x: -1 + lt * 2, y: 0, z: -1 }
@@ -594,92 +773,121 @@
         }),
         eight: (t) => {
           const d = 1 + Math.sin(t) ** 2
-          return {
-            x: Math.cos(t) / d,
-            y: 0,
-            z: (Math.sin(t) * Math.cos(t)) / d,
-          }
+          return { x: Math.cos(t) / d, y: 0, z: (Math.sin(t) * Math.cos(t)) / d }
         },
-        helix: (t) => ({
-          x: Math.cos(t),
-          y: Math.sin(t * 0.4),
-          z: Math.sin(t),
-        }),
+        helix: (t) => ({ x: Math.cos(t), y: Math.sin(t * 0.4), z: Math.sin(t) }),
       }
 
-      // --- SILNIK AUDIO ---
-      async function initAudio() {
-        if (state.ctx) return
-        state.ctx = new (window.AudioContext || window.webkitAudioContext)()
+      // Wspólny punkt trajektorii (na żywo i przy nagrywaniu offline)
+      function computePoint(t) {
+        let p = Trajectories[state.shape](t)
+        p = { x: p.x * state.size, y: p.y * state.size, z: p.z * state.size }
+        p = Math3D.rotateX(p, state.rotX)
+        p = Math3D.rotateY(p, state.rotY)
+        return p
+      }
 
-        state.panner = new PannerNode(state.ctx, {
+      // Prędkość kątowa figury [rad/s] — spójna z pętlą na żywo (0.016*speed / klatkę @60fps)
+      function omega() {
+        return 0.96 * state.speed
+      }
+
+      // ===== SILNIK AUDIO (na żywo) =====
+      async function ensureAudio() {
+        if (state.ctx) {
+          if (state.ctx.state === "suspended") await state.ctx.resume()
+          return
+        }
+        const ctx = new (window.AudioContext || window.webkitAudioContext)()
+        state.ctx = ctx
+        state.panner = new PannerNode(ctx, {
           panningModel: "HRTF",
           distanceModel: "inverse",
         })
-
-        state.gain = state.ctx.createGain()
+        state.panner.rolloffFactor = 0 // stały poziom — kierunek liczy HRTF, nie tłumienie odległością
+        state.filter = ctx.createBiquadFilter()
+        state.filter.type = "lowpass"
+        state.filter.frequency.value = 1000
+        state.gain = ctx.createGain()
         state.gain.gain.value = 0
-
-        state.osc = state.ctx.createOscillator()
-        state.osc.type = state.waveform
-        state.osc.frequency.value = 140
-
-        const filter = state.ctx.createBiquadFilter()
-        filter.type = "lowpass"
-        filter.frequency.value = 1000
-
-        state.osc
-          .connect(filter)
-          .connect(state.panner)
-          .connect(state.gain)
-          .connect(state.ctx.destination)
-        state.osc.start()
-
-        // Standard: Patrzymy w -Z, Góra to +Y
-        state.ctx.listener.setOrientation(0, 0, -1, 0, 1, 0)
+        state.filter.connect(state.panner)
+        state.panner.connect(state.gain)
+        state.gain.connect(ctx.destination)
+        // Standard WebAudio: patrzymy w -Z, góra +Y (wartości domyślne listenera)
+        buildSource()
       }
 
-      // --- PĘTLA GŁÓWNA ---
+      // Buduje/odbudowuje źródło zależnie od trybu (synteza / wczytany plik)
+      function buildSource() {
+        if (!state.ctx) return
+        if (state.srcNode) {
+          try {
+            state.srcNode.stop()
+          } catch (e) {}
+          try {
+            state.srcNode.disconnect()
+          } catch (e) {}
+          state.srcNode = null
+        }
+        if (state.mode === "file" && state.buffer) {
+          const s = state.ctx.createBufferSource()
+          s.buffer = state.buffer
+          s.loop = true
+          s.connect(state.panner) // plik: pełne pasmo (bez lowpassu)
+          s.start()
+          state.srcNode = s
+        } else {
+          const o = state.ctx.createOscillator()
+          o.type = state.waveform
+          o.frequency.value = 140
+          o.connect(state.filter) // synteza: przez lowpass
+          o.start()
+          state.srcNode = o
+        }
+      }
+
+      // ===== PĘTLA WIZUALIZACJI (niezależna od audio) =====
       function update() {
         if (state.isRunning) {
           state.time += 0.016 * state.speed * state.direction
-
-          let point = Trajectories[state.shape](state.time)
-          point.x *= state.size
-          point.y *= state.size
-          point.z *= state.size
-
-          point = Math3D.rotateX(point, state.rotX)
-          point = Math3D.rotateY(point, state.rotY)
-
-          state.pos = point
-
-          const now = state.ctx.currentTime
-          state.panner.positionX.setTargetAtTime(point.x, now, 0.05)
-          state.panner.positionY.setTargetAtTime(point.y, now, 0.05)
-          state.panner.positionZ.setTargetAtTime(point.z, now, 0.05)
-
+          state.pos = computePoint(state.time)
+          if (state.ctx && state.panner) {
+            const now = state.ctx.currentTime
+            state.panner.positionX.setTargetAtTime(state.pos.x, now, 0.05)
+            state.panner.positionY.setTargetAtTime(state.pos.y, now, 0.05)
+            state.panner.positionZ.setTargetAtTime(state.pos.z, now, 0.05)
+          }
           draw()
           syncUI()
         }
         requestAnimationFrame(update)
       }
 
-      // --- RYSOWANIE ---
+      // ===== RYSOWANIE =====
       function draw() {
         const ctx = state.canvasCtx
+        if (!ctx) return
         const w = state.canvas.width
         const h = state.canvas.height
         const cx = w / 2
         const cy = h / 2
-        const zoom = w / 2 / 60
+        const zoom = Math.min(w, h) / 2 / VIEW_RANGE
 
         ctx.clearRect(0, 0, w, h)
 
-        // Siatka radaru
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.03)"
+        // Osie
+        ctx.strokeStyle = "rgba(255,255,255,0.04)"
         ctx.lineWidth = 1
-        for (let r = 20; r <= 60; r += 20) {
+        ctx.beginPath()
+        ctx.moveTo(0, cy)
+        ctx.lineTo(w, cy)
+        ctx.moveTo(cx, 0)
+        ctx.lineTo(cx, h)
+        ctx.stroke()
+
+        // Pierścienie referencyjne 20/40/60/80 m
+        ctx.strokeStyle = "rgba(255,255,255,0.06)"
+        for (let r = 20; r <= 80; r += 20) {
           ctx.beginPath()
           ctx.arc(cx, cy, r * zoom, 0, Math.PI * 2)
           ctx.stroke()
@@ -687,15 +895,10 @@
 
         // Podgląd trajektorii (Ghost Path)
         ctx.beginPath()
-        ctx.strokeStyle = "rgba(255, 171, 0, 0.1)"
+        ctx.strokeStyle = "rgba(255, 171, 0, 0.22)"
         ctx.setLineDash([5, 5])
-        for (let i = 0; i < Math.PI * 2; i += 0.1) {
-          let p = Trajectories[state.shape](i)
-          p.x *= state.size
-          p.y *= state.size
-          p.z *= state.size
-          p = Math3D.rotateX(p, state.rotX)
-          p = Math3D.rotateY(p, state.rotY)
+        for (let i = 0; i <= Math.PI * 2 + 0.05; i += 0.05) {
+          const p = computePoint(i)
           const px = cx + p.x * zoom
           const pz = cy + p.z * zoom
           if (i === 0) ctx.moveTo(px, pz)
@@ -704,22 +907,22 @@
         ctx.stroke()
         ctx.setLineDash([])
 
-        // Punkt dźwięku
+        // Punkt dźwięku (promień lekko zależny od wysokości Y)
         const tx = cx + state.pos.x * zoom
         const tz = cy + state.pos.z * zoom
-
+        const rad = Math.max(4, 9 + Math.max(-5, Math.min(7, state.pos.y * 0.08)))
         ctx.shadowBlur = 20
         ctx.shadowColor = "#FFAB00"
         ctx.fillStyle = "#FFAB00"
         ctx.beginPath()
-        ctx.arc(tx, tz, 7, 0, Math.PI * 2)
+        ctx.arc(tx, tz, rad, 0, Math.PI * 2)
         ctx.fill()
         ctx.shadowBlur = 0
 
-        // Wskaźnik wysokości (Y) - mapowanie -60m do 60m na 0-100%
-        const elevIndicator = document.getElementById("elevationIndicator")
+        // Wskaźnik wysokości (Y): -60 m..60 m -> 0..100%
+        const elev = document.getElementById("elevationIndicator")
         const percent = ((state.pos.y + 60) / 120) * 100
-        elevIndicator.style.bottom = `${Math.max(0, Math.min(100, percent))}%`
+        elev.style.bottom = `${Math.max(0, Math.min(100, percent))}%`
         document.getElementById("heightLabel").textContent =
           `${state.pos.y.toFixed(1)}m`
       }
@@ -732,53 +935,45 @@
           `XYZ: [${state.pos.x.toFixed(2)}, ${state.pos.y.toFixed(2)}, ${state.pos.z.toFixed(2)}]`
       }
 
-      // --- EVENTY ---
-      function setAcStatus(running) {
+      // ===== STATUS ODTWARZANIA (belka) =====
+      function setPlayStatus(playing) {
         const dot = document.getElementById("acStatusDot")
         const label = document.getElementById("acStatus")
-        if (running) {
-          dot.className =
-            "w-2 h-2 rounded-full bg-[#00E5CC] shadow-[0_0_8px_rgba(0,229,204,0.6)] transition-all"
-          label.textContent = "Audio Context: Running"
-          label.parentElement.classList.remove("text-[#9C9890]")
-          label.parentElement.classList.add("text-[#00E5CC]")
+        const wrap = label.parentElement
+        if (playing) {
+          dot.style.background = "#00E5CC"
+          dot.style.boxShadow = "0 0 8px rgba(0,229,204,0.6)"
+          label.textContent = "Odtwarzanie"
+          wrap.style.color = "#00E5CC"
         } else {
-          dot.className = "w-2 h-2 rounded-full bg-[#9C9890] transition-all"
-          label.textContent = "Audio Context: Idle"
+          dot.style.background = "#9C9890"
+          dot.style.boxShadow = "none"
+          label.textContent = "Zatrzymano"
+          wrap.style.color = "#9C9890"
         }
       }
 
-      document.getElementById("btnStart").onclick = async () => {
-        await initAudio()
-        state.isRunning = true
-        setAcStatus(true)
-        document.getElementById("startOverlay").style.display = "none"
-        state.canvas = document.getElementById("radarCanvas")
-        state.canvasCtx = state.canvas.getContext("2d")
-        state.canvas.width = 500
-        state.canvas.height = 500
-        update()
+      // ===== ROZMIAR RADARU (responsywny) =====
+      function resizeRadar() {
+        const c = state.canvas
+        if (!c) return
+        const panel = c.closest(".glass")
+        const availH = (panel ? panel.clientHeight : 600) - 120
+        const availW = (panel ? panel.clientWidth : 600) - 170
+        const size = Math.max(280, Math.min(availW, availH))
+        const dpr = window.devicePixelRatio || 1
+        c.style.width = size + "px"
+        c.style.height = size + "px"
+        c.width = Math.round(size * dpr)
+        c.height = Math.round(size * dpr)
       }
 
-      document.getElementById("btnToggleAudio").onclick = () => {
-        state.audioActive = !state.audioActive
-        const val = state.audioActive ? 0.35 : 0
-        state.gain.gain.setTargetAtTime(val, state.ctx.currentTime, 0.1)
-        document.getElementById("audioIndicator").className =
-          `w-2.5 h-2.5 rounded-full ${state.audioActive ? "bg-[#00E5CC] shadow-[0_0_10px_rgba(0,229,204,0.5)]" : "bg-[#FF3355] shadow-[0_0_10px_rgba(255,51,85,0.5)]"}`
-      }
-
-      document.getElementById("btnDirection").onclick = (e) => {
-        state.direction *= -1
-        e.target.textContent =
-          state.direction === 1 ? "Zgodnie z wskaz." : "Przeciwnie"
-      }
-
+      // ===== KONTROLKI =====
       document.getElementById("shapeSelect").onchange = (e) =>
         (state.shape = e.target.value)
       document.getElementById("waveformSelect").onchange = (e) => {
         state.waveform = e.target.value
-        if (state.osc) state.osc.type = state.waveform
+        if (state.mode === "synth") buildSource()
       }
       document.getElementById("speedRange").oninput = (e) => {
         state.speed = parseFloat(e.target.value)
@@ -790,6 +985,288 @@
         (state.rotX = parseInt(e.target.value))
       document.getElementById("rotYRange").oninput = (e) =>
         (state.rotY = parseInt(e.target.value))
+      document.getElementById("repsRange").oninput = (e) => {
+        state.reps = parseInt(e.target.value)
+        document.getElementById("repsVal").textContent = state.reps
+      }
+      document.getElementById("recFormat").onchange = (e) =>
+        (state.recFormat = e.target.value)
+
+      document.getElementById("btnDirection").onclick = (e) => {
+        state.direction *= -1
+        e.target.textContent =
+          state.direction === 1 ? "Zgodnie z wskaz." : "Przeciwnie"
+      }
+
+      // ODTWÓRZ / WYCISZ (zmiana barwy + napisu; lazy-init audio)
+      const btnToggle = document.getElementById("btnToggleAudio")
+      btnToggle.onclick = async () => {
+        await ensureAudio()
+        state.audioActive = !state.audioActive
+        state.gain.gain.setTargetAtTime(
+          state.audioActive ? 0.35 : 0,
+          state.ctx.currentTime,
+          0.1,
+        )
+        if (state.audioActive) {
+          btnToggle.textContent = "WYCISZ"
+          btnToggle.classList.remove("is-idle")
+          btnToggle.classList.add("is-active")
+        } else {
+          btnToggle.textContent = "ODTWÓRZ"
+          btnToggle.classList.remove("is-active")
+          btnToggle.classList.add("is-idle")
+        }
+        const ind = document.getElementById("audioIndicator")
+        ind.style.background = state.audioActive ? "#00E5CC" : "#9C9890"
+        ind.style.boxShadow = state.audioActive
+          ? "0 0 10px rgba(0,229,204,0.5)"
+          : "none"
+        setPlayStatus(state.audioActive)
+      }
+
+      // ===== WCZYTYWANIE WŁASNEGO DŹWIĘKU (pętla) =====
+      const fileInput = document.getElementById("fileInput")
+      document.getElementById("btnLoadFile").onclick = () => fileInput.click()
+      fileInput.onchange = async (e) => {
+        const f = e.target.files[0]
+        if (!f) return
+        const info = document.getElementById("srcInfo")
+        info.textContent = "Dekodowanie…"
+        try {
+          await ensureAudio()
+          const arr = await f.arrayBuffer()
+          state.buffer = await state.ctx.decodeAudioData(arr)
+          state.mode = "file"
+          state.fileName = f.name
+          buildSource()
+          info.innerHTML = `Źródło: <span style="color:#00E5CC">${f.name}</span> (pętla)`
+          document.getElementById("btnClearFile").style.display = "inline-block"
+        } catch (err) {
+          state.mode = "synth"
+          info.innerHTML = `<span style="color:#FF3355">Nie udało się wczytać/zdekodować pliku</span>`
+        }
+      }
+      document.getElementById("btnClearFile").onclick = () => {
+        state.mode = "synth"
+        state.buffer = null
+        state.fileName = ""
+        if (state.ctx) buildSource()
+        document.getElementById("srcInfo").textContent =
+          "Źródło: synteza (oscylator)"
+        document.getElementById("btnClearFile").style.display = "none"
+      }
+
+      // ===== NAGRYWANIE =====
+      // Sample syntezy (dla trybu ambisonicznego kodowanego ręcznie)
+      function oscSample(type, ph) {
+        const x = ph - Math.floor(ph) // 0..1
+        switch (type) {
+          case "sine":
+            return Math.sin(2 * Math.PI * x)
+          case "square":
+            return x < 0.5 ? 1 : -1
+          case "sawtooth":
+            return 2 * x - 1
+          case "triangle":
+          default:
+            return 4 * Math.abs(x - 0.5) - 1
+        }
+      }
+
+      // Binauralny render offline (HRTF -> stereo)
+      async function renderBinaural(reps, sr) {
+        const dur = reps * ((2 * Math.PI) / omega())
+        if (dur > MAX_DUR)
+          throw new Error(
+            `Nagranie ~${Math.round(dur)} s przekracza limit ${MAX_DUR} s — zmniejsz powtórzenia lub zwiększ prędkość.`,
+          )
+        const len = Math.max(1, Math.ceil(sr * dur))
+        const oac = new OfflineAudioContext(2, len, sr)
+        const panner = new PannerNode(oac, {
+          panningModel: "HRTF",
+          distanceModel: "inverse",
+        })
+        panner.rolloffFactor = 0
+        const gain = oac.createGain()
+        gain.gain.value = 0.5
+        let src
+        if (state.mode === "file" && state.buffer) {
+          src = oac.createBufferSource()
+          src.buffer = state.buffer
+          src.loop = true
+          src.connect(panner)
+        } else {
+          const o = oac.createOscillator()
+          o.type = state.waveform
+          o.frequency.value = 140
+          const f = oac.createBiquadFilter()
+          f.type = "lowpass"
+          f.frequency.value = 1000
+          o.connect(f)
+          f.connect(panner)
+          src = o
+        }
+        panner.connect(gain)
+        gain.connect(oac.destination)
+        const step = 1 / 200
+        for (let ts = 0; ts <= dur; ts += step) {
+          const t = state.direction * omega() * ts
+          const p = computePoint(t)
+          panner.positionX.setValueAtTime(p.x, ts)
+          panner.positionY.setValueAtTime(p.y, ts)
+          panner.positionZ.setValueAtTime(p.z, ts)
+        }
+        src.start(0)
+        const rb = await oac.startRendering()
+        return [rb.getChannelData(0), rb.getChannelData(1)]
+      }
+
+      // Ambisoniczny render (FOA, AmbiX: kolejność ACN = W,Y,Z,X ; normalizacja SN3D)
+      async function renderAmbix(reps, sr) {
+        const dur = reps * ((2 * Math.PI) / omega())
+        if (dur > MAX_DUR)
+          throw new Error(
+            `Nagranie ~${Math.round(dur)} s przekracza limit ${MAX_DUR} s — zmniejsz powtórzenia lub zwiększ prędkość.`,
+          )
+        const N = Math.max(1, Math.ceil(sr * dur))
+        // 1) sygnał mono
+        const mono = new Float32Array(N)
+        if (state.mode === "file" && state.buffer) {
+          const b = state.buffer
+          const srcSR = b.sampleRate
+          const chN = b.numberOfChannels
+          const L = b.length
+          const chans = []
+          for (let c = 0; c < chN; c++) chans.push(b.getChannelData(c))
+          for (let i = 0; i < N; i++) {
+            const idx = Math.floor((i * srcSR) / sr) % L
+            let s = 0
+            for (let c = 0; c < chN; c++) s += chans[c][idx]
+            mono[i] = (s / chN) * 0.9
+          }
+        } else {
+          const freq = 140
+          for (let i = 0; i < N; i++)
+            mono[i] = oscSample(state.waveform, (i / sr) * freq) * 0.5
+        }
+        // 2) kodowanie FOA
+        const W = new Float32Array(N)
+        const Y = new Float32Array(N)
+        const Z = new Float32Array(N)
+        const X = new Float32Array(N)
+        for (let i = 0; i < N; i++) {
+          const ts = i / sr
+          const t = state.direction * omega() * ts
+          const p = computePoint(t)
+          // osie WebAudio -> AmbiX: przód=+X(=-z), lewo=+Y(=-x), góra=+Z(=+y)
+          let ax = -p.z
+          let ay = -p.x
+          let az = p.y
+          const len = Math.hypot(ax, ay, az) || 1
+          ax /= len
+          ay /= len
+          az /= len
+          const s = mono[i]
+          W[i] = s // SN3D: W = 1
+          Y[i] = s * ay
+          Z[i] = s * az
+          X[i] = s * ax
+        }
+        return [W, Y, Z, X]
+      }
+
+      // Enkoder WAV 32-bit float (dowolna liczba kanałów)
+      function encodeWavFloat32(channels, sr) {
+        const numCh = channels.length
+        const N = channels[0].length
+        const blockAlign = numCh * 4
+        const dataLen = N * blockAlign
+        const buf = new ArrayBuffer(44 + dataLen)
+        const dv = new DataView(buf)
+        const ws = (o, s) => {
+          for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i))
+        }
+        ws(0, "RIFF")
+        dv.setUint32(4, 36 + dataLen, true)
+        ws(8, "WAVE")
+        ws(12, "fmt ")
+        dv.setUint32(16, 16, true)
+        dv.setUint16(20, 3, true) // 3 = IEEE float
+        dv.setUint16(22, numCh, true)
+        dv.setUint32(24, sr, true)
+        dv.setUint32(28, sr * blockAlign, true)
+        dv.setUint16(32, blockAlign, true)
+        dv.setUint16(34, 32, true)
+        ws(36, "data")
+        dv.setUint32(40, dataLen, true)
+        let off = 44
+        for (let i = 0; i < N; i++)
+          for (let c = 0; c < numCh; c++) {
+            dv.setFloat32(off, channels[c][i], true)
+            off += 4
+          }
+        return new Blob([buf], { type: "audio/wav" })
+      }
+
+      const btnRecord = document.getElementById("btnRecord")
+      btnRecord.onclick = async () => {
+        const status = document.getElementById("recStatus")
+        const sr = 48000
+        const fmt = state.recFormat || "binaural"
+        const prev = btnRecord.innerHTML
+        btnRecord.disabled = true
+        btnRecord.innerHTML = '<span style="color:#FF3355">●</span> Renderowanie…'
+        status.style.color = "#FFAB00"
+        status.textContent = `Render ${state.reps}× figury (${fmt === "ambix" ? "AmbiX 4ch" : "binaural stereo"})…`
+        try {
+          await ensureAudio()
+          let channels, suffix
+          if (fmt === "ambix") {
+            channels = await renderAmbix(state.reps, sr)
+            suffix = "ambix-foa"
+          } else {
+            channels = await renderBinaural(state.reps, sr)
+            suffix = "binaural"
+          }
+          const blob = encodeWavFloat32(channels, sr)
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement("a")
+          const base =
+            state.mode === "file" && state.fileName
+              ? state.fileName.replace(/\.[^.]+$/, "")
+              : state.shape
+          a.href = url
+          a.download = `sekwencer_${base}_${suffix}_${state.reps}x.wav`
+          document.body.appendChild(a)
+          a.click()
+          a.remove()
+          setTimeout(() => URL.revokeObjectURL(url), 5000)
+          const mb = (blob.size / 1048576).toFixed(1)
+          status.style.color = "#00E5CC"
+          status.textContent = `Zapisano: ${a.download} (${mb} MB, 48 kHz / 32-bit float)`
+        } catch (err) {
+          status.style.color = "#FF3355"
+          status.textContent =
+            "Błąd: " + (err && err.message ? err.message : err)
+        } finally {
+          btnRecord.disabled = false
+          btnRecord.innerHTML = prev
+        }
+      }
+
+      // ===== START (bez ekranu startowego) =====
+      function boot() {
+        state.canvas = document.getElementById("radarCanvas")
+        state.canvasCtx = state.canvas.getContext("2d")
+        resizeRadar()
+        state.isRunning = true
+        setPlayStatus(false)
+        update()
+      }
+      window.addEventListener("resize", resizeRadar)
+      boot()
+
     </script>
   </body>
 </html>
