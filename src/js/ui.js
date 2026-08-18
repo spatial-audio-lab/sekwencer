@@ -74,10 +74,10 @@ export function wireControls() {
     state.waveform = e.target.value
     if (state.mode === 'synth') buildSource()
   }
-  document.getElementById('speedRange').oninput = (e) => {
-    state.speed = parseFloat(e.target.value)
-    document.getElementById('speedVal').textContent = `${state.speed.toFixed(1)} m/s`
-  }
+  speedRange.oninput = (e) => {
+  state.speed = parseFloat(e.target.value)
+  speedVal.textContent = `${state.speed.toFixed(1)} m/s`
+}
   document.getElementById('sizeRange').oninput = (e) => {
     state.size = parseInt(e.target.value)
     updateTrajectoryLine()
