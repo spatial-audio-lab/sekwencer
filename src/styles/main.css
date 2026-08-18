@@ -168,3 +168,87 @@ select:focus-visible {
     scroll-behavior: auto !important;
   }
 }
+
+/* ===== Sekcje rozwijane (Źródło Dźwięku / Geometria Ruchu / Nagrywanie) ===== */
+.sal-section {
+  padding: 0;
+}
+.sal-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 1.5rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.sal-section-header::-webkit-details-marker {
+  display: none;
+}
+.sal-section-header::marker {
+  content: '';
+}
+.sal-section-header:focus-visible {
+  outline: 2px solid #00e5cc;
+  outline-offset: -2px;
+}
+.sal-section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sal-section-title {
+  font-family: 'Azeret Mono', monospace;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: #00e5cc;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+.sal-chevron {
+  flex: none;
+  color: #9c9890;
+  transition: transform 0.2s ease;
+}
+.sal-section[open] > .sal-section-header .sal-chevron {
+  transform: rotate(180deg);
+}
+.sal-section-body {
+  padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+/* ===== Przełącznik trybu źródła (Synteza / Dźwięk użytkownika) ===== */
+.src-mode-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid rgba(240, 235, 224, 0.14);
+}
+.src-mode-btn {
+  flex: 1;
+  font-family: 'Azeret Mono', monospace;
+  font-weight: 500;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 12px 8px;
+  min-height: 44px;
+  background: transparent;
+  color: #9c9890;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.src-mode-btn + .src-mode-btn {
+  border-left: 1px solid rgba(240, 235, 224, 0.14);
+}
+.src-mode-btn:hover {
+  color: #f0ebe0;
+}
+.src-mode-btn.is-active {
+  background: #00e5cc;
+  color: #0a0c08;
+}
+.hidden {
+  display: none !important;
+}
