@@ -1,8 +1,10 @@
 // Silnik audio (na żywo) + render offline (nagrywanie) + enkoder WAV.
-// Przeniesione 1:1 z poprzedniego index.html — logika, wartości i kolejność operacji
-// bez zmian (Etap 1 przebudowy: modularyzacja, nie zmiana zachowania).
 import { state, MAX_DUR } from './state.js'
 import { computePoint, omega } from './math.js'
+
+const SOURCE_FADE_IN = 0.02
+const SOURCE_FADE_OUT = 0.025
+const SILENCE = 0.0001
 
 // ===== SILNIK AUDIO (na żywo) =====
 export async function ensureAudio() {
@@ -16,7 +18,7 @@ export async function ensureAudio() {
     panningModel: 'HRTF',
     distanceModel: 'inverse',
   })
-  state.panner.rolloffFactor = 0 // stały poziom — kierunek liczy HRTF, nie tłumienie odległością
+  state.panner.rolloffFactor = 0
   state.filter = ctx.createBiquadFilter()
   state.filter.type = 'lowpass'
   state.filter.frequency.value = 1000
@@ -25,43 +27,79 @@ export async function ensureAudio() {
   state.filter.connect(state.panner)
   state.panner.connect(state.gain)
   state.gain.connect(ctx.destination)
-  // Standard WebAudio: patrzymy w -Z, góra +Y (wartości domyślne listenera)
   buildSource()
 }
 
-// Buduje/odbudowuje źródło zależnie od trybu (synteza / wczytany plik)
+function stopSource(source, sourceGain, disconnectNode) {
+  if (!source || !sourceGain || !state.ctx) return
+
+  const now = state.ctx.currentTime
+  sourceGain.gain.cancelScheduledValues(now)
+  sourceGain.gain.setValueAtTime(SILENCE, now)
+  sourceGain.gain.exponentialRampToValueAtTime(SILENCE, now + SOURCE_FADE_OUT)
+
+  const cleanupAt = now + SOURCE_FADE_OUT + 0.01
+  try {
+    source.stop(cleanupAt)
+  } catch (e) {}
+
+  window.setTimeout(() => {
+    try {
+      source.disconnect()
+    } catch (e) {}
+    try {
+      sourceGain.disconnect()
+    } catch (e) {}
+    try {
+      disconnectNode.disconnect()
+    } catch (e) {}
+  }, Math.ceil((SOURCE_FADE_OUT + 0.02) * 1000))
+}
+
+// Buduje/odbudowuje źródło zależnie od trybu (synteza / wczytany plik).
+// Każde źródło ma własny gain, aby jego wymiana nie powodowała nieciągłości fali.
 export function buildSource() {
   if (!state.ctx) return
+
   if (state.srcNode) {
-    try {
-      state.srcNode.stop()
-    } catch (e) {}
-    try {
-      state.srcNode.disconnect()
-    } catch (e) {}
+    stopSource(state.srcNode, state.sourceGain, state.sourceNode)
     state.srcNode = null
+    state.sourceGain = null
+    state.sourceNode = null
   }
+
+  const now = state.ctx.currentTime
+  const sourceGain = state.ctx.createGain()
+  sourceGain.gain.setValueAtTime(SILENCE, now)
+
+  let src
+  let sourceNode
   if (state.mode === 'file' && state.buffer) {
-    const s = state.ctx.createBufferSource()
-    s.buffer = state.buffer
-    s.loop = true
-    s.connect(state.panner) // plik: pełne pasmo (bez lowpassu)
-    s.start()
-    state.srcNode = s
+    src = state.ctx.createBufferSource()
+    src.buffer = state.buffer
+    src.loop = true
+    sourceNode = src
+    sourceGain.connect(state.panner)
   } else {
-    const o = state.ctx.createOscillator()
-    o.type = state.waveform
-    o.frequency.value = 140
-    o.connect(state.filter) // synteza: przez lowpass
-    o.start()
-    state.srcNode = o
+    src = state.ctx.createOscillator()
+    src.type = state.waveform
+    src.frequency.value = 140
+    sourceNode = state.filter
+    sourceGain.connect(state.filter)
   }
+
+  src.connect(sourceGain)
+  src.start(now)
+  sourceGain.gain.exponentialRampToValueAtTime(1, now + SOURCE_FADE_IN)
+
+  state.srcNode = src
+  state.sourceGain = sourceGain
+  state.sourceNode = sourceNode
 }
 
 // ===== NAGRYWANIE =====
-// Sample syntezy (dla trybu ambisonicznego kodowanego ręcznie)
 function oscSample(type, ph) {
-  const x = ph - Math.floor(ph) // 0..1
+  const x = ph - Math.floor(ph)
   switch (type) {
     case 'sine':
       return Math.sin(2 * Math.PI * x)
@@ -75,7 +113,6 @@ function oscSample(type, ph) {
   }
 }
 
-// Binauralny render offline (HRTF -> stereo)
 export async function renderBinaural(reps, sr) {
   const dur = reps * ((2 * Math.PI) / omega())
   if (dur > MAX_DUR)
@@ -123,7 +160,6 @@ export async function renderBinaural(reps, sr) {
   return [rb.getChannelData(0), rb.getChannelData(1)]
 }
 
-// Ambisoniczny render (FOA, AmbiX: kolejność ACN = W,Y,Z,X ; normalizacja SN3D)
 export async function renderAmbix(reps, sr) {
   const dur = reps * ((2 * Math.PI) / omega())
   if (dur > MAX_DUR)
@@ -131,7 +167,6 @@ export async function renderAmbix(reps, sr) {
       `Nagranie ~${Math.round(dur)} s przekracza limit ${MAX_DUR} s — zmniejsz powtórzenia lub zwiększ prędkość.`,
     )
   const N = Math.max(1, Math.ceil(sr * dur))
-  // 1) sygnał mono
   const mono = new Float32Array(N)
   if (state.mode === 'file' && state.buffer) {
     const b = state.buffer
@@ -151,7 +186,6 @@ export async function renderAmbix(reps, sr) {
     for (let i = 0; i < N; i++)
       mono[i] = oscSample(state.waveform, (i / sr) * freq) * 0.5
   }
-  // 2) kodowanie FOA
   const W = new Float32Array(N)
   const Y = new Float32Array(N)
   const Z = new Float32Array(N)
@@ -160,7 +194,6 @@ export async function renderAmbix(reps, sr) {
     const ts = i / sr
     const t = state.direction * omega() * ts
     const p = computePoint(t)
-    // osie WebAudio -> AmbiX: przód=+X(=-z), lewo=+Y(=-x), góra=+Z(=+y)
     let ax = -p.z
     let ay = -p.x
     let az = p.y
@@ -169,7 +202,7 @@ export async function renderAmbix(reps, sr) {
     ay /= len
     az /= len
     const s = mono[i]
-    W[i] = s // SN3D: W = 1
+    W[i] = s
     Y[i] = s * ay
     Z[i] = s * az
     X[i] = s * ax
@@ -177,7 +210,6 @@ export async function renderAmbix(reps, sr) {
   return [W, Y, Z, X]
 }
 
-// Enkoder WAV 32-bit float (dowolna liczba kanałów)
 export function encodeWavFloat32(channels, sr) {
   const numCh = channels.length
   const N = channels[0].length
@@ -193,7 +225,7 @@ export function encodeWavFloat32(channels, sr) {
   ws(8, 'WAVE')
   ws(12, 'fmt ')
   dv.setUint32(16, 16, true)
-  dv.setUint16(20, 3, true) // 3 = IEEE float
+  dv.setUint16(20, 3, true)
   dv.setUint16(22, numCh, true)
   dv.setUint32(24, sr, true)
   dv.setUint32(28, sr * blockAlign, true)
