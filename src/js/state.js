@@ -16,7 +16,7 @@ export const state = {
   audioActive: false,
 
   shape: 'circle',
-  speed: 1.0,
+  speed: 5.0,
   direction: 1,
   size: 25,
   rotX: 0,
