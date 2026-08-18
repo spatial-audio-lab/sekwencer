@@ -18,19 +18,27 @@ function advanceTrajectory(dt) {
 }
 
 // ===== PĘTLA (wizualizacja 3D + audio, jedna wspólna pozycja state.pos) =====
-export function update() {
+let previousFrameTime = performance.now()
+
+export function update(frameTime = performance.now()) {
+  const dt = Math.min((frameTime - previousFrameTime) / 1000, 0.05)
+  previousFrameTime = frameTime
+
   if (state.isRunning) {
-    advanceTrajectory(0.016)
+    advanceTrajectory(dt)
     state.pos = computePoint(state.time)
+
     if (state.ctx && state.panner) {
       const now = state.ctx.currentTime
       state.panner.positionX.setTargetAtTime(state.pos.x, now, 0.05)
       state.panner.positionY.setTargetAtTime(state.pos.y, now, 0.05)
       state.panner.positionZ.setTargetAtTime(state.pos.z, now, 0.05)
     }
+
     renderScene3D()
     syncUI()
   }
+
   requestAnimationFrame(update)
 }
 
