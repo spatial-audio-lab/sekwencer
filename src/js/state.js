@@ -22,6 +22,7 @@ export const state = {
   rotX: 0,
   rotY: 0,
   waveform: 'triangle',
+  volume: 0.35, // 0..1 — mnożnik gain przy odtwarzaniu na żywo (patrz btnToggleAudio / volumeRange w ui.js)
   reps: 2,
 
   time: 0,

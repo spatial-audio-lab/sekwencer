@@ -66,16 +66,106 @@
         <div class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-6 h-full max-h-[850px]">
           <!-- PRAWO: Panel kontrolek (order-2 na desktopie) -->
           <div class="lg:col-span-4 lg:order-2 flex flex-col gap-6 overflow-y-auto pr-2 custom-scroll">
-            <!-- Sekcja: Geometria -->
-            <div class="glass p-6 flex flex-col gap-5">
-              <div class="flex items-center justify-between">
-                <h2 class="text-xs font-mono font-semibold text-[#00E5CC] uppercase tracking-[0.2em]">
-                  Geometria Ruchu
-                </h2>
-                <div id="audioIndicator" class="w-2.5 h-2.5 rounded-full bg-[#9C9890] transition-all"></div>
-              </div>
+            <!-- Sekcja: Źródło Dźwięku (rozwijana) -->
+            <details class="glass sal-section" id="sectionSource" open>
+              <summary class="sal-section-header">
+                <span class="sal-section-title-wrap">
+                  <span class="sal-section-title">Źródło Dźwięku</span>
+                  <span id="audioIndicator" class="w-2.5 h-2.5 rounded-full bg-[#9C9890] transition-all"></span>
+                </span>
+                <svg class="sal-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M2.5 5L7 9.5L11.5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </summary>
 
-              <div class="space-y-5">
+              <div class="sal-section-body space-y-5">
+                <!-- Wybór trybu źródła -->
+                <div>
+                  <label class="text-[10px] font-mono text-[#9C9890] uppercase tracking-[0.15em] mb-2 block"
+                    >Rodzaj źródła</label
+                  >
+                  <div class="src-mode-toggle" role="radiogroup" aria-label="Rodzaj źródła dźwięku">
+                    <button
+                      type="button"
+                      id="srcModeSynthBtn"
+                      class="src-mode-btn is-active"
+                      role="radio"
+                      aria-checked="true"
+                    >
+                      Synteza
+                    </button>
+                    <button
+                      type="button"
+                      id="srcModeFileBtn"
+                      class="src-mode-btn"
+                      role="radio"
+                      aria-checked="false"
+                    >
+                      Dźwięk użytkownika
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Panel: Synteza (kształt fali) -->
+                <div id="srcSynthPanel">
+                  <label class="text-[10px] font-mono text-[#9C9890] uppercase tracking-[0.15em] mb-2 block"
+                    >Kształt fali (Timbre)</label
+                  >
+                  <select id="waveformSelect" class="w-full">
+                    <option value="sine">Sinusoidalna (Łagodna)</option>
+                    <option value="triangle" selected>Trójkątna (Zbalansowana)</option>
+                    <option value="sawtooth">Piłokształtna (Ostra)</option>
+                    <option value="square">Prostokątna (Cyfrowa)</option>
+                  </select>
+                </div>
+
+                <!-- Panel: Dźwięk użytkownika (plik w pętli) -->
+                <div id="srcFilePanel" class="hidden">
+                  <label class="text-[10px] font-mono text-[#9C9890] uppercase tracking-[0.15em] mb-2 block"
+                    >Własny dźwięk (pętla)</label
+                  >
+                  <input
+                    id="fileInput"
+                    type="file"
+                    accept="audio/*,.opus,.mp3,.wav,.ogg,.flac,.m4a,.aac"
+                    style="display: none"
+                  />
+                  <button id="btnLoadFile" class="btn-secondary w-full">Wczytaj plik audio…</button>
+                  <div id="srcInfo" class="mt-2 font-mono text-[11px] text-[#9C9890]">Źródło: synteza (oscylator)</div>
+                  <button id="btnClearFile" class="btn-ghost-inline mt-2" style="display: none">
+                    ↺ Wróć do syntezy
+                  </button>
+                </div>
+
+                <!-- Głośność -->
+                <div>
+                  <label class="text-[10px] font-mono text-[#9C9890] uppercase tracking-[0.15em] mb-2 block"
+                    >Głośność</label
+                  >
+                  <div class="flex items-center gap-4 min-h-[44px]">
+                    <input type="range" id="volumeRange" min="0" max="100" step="1" value="35" class="flex-1" />
+                    <span class="font-mono text-sm text-[#00E5CC] min-w-[64px] text-right"
+                      ><span id="volumeVal">35</span>%</span
+                    >
+                  </div>
+                </div>
+
+                <button id="btnToggleAudio" class="btn-toggle is-idle">ODTWÓRZ</button>
+              </div>
+            </details>
+
+            <!-- Sekcja: Geometria Ruchu (rozwijana) -->
+            <details class="glass sal-section" id="sectionGeometry" open>
+              <summary class="sal-section-header">
+                <span class="sal-section-title-wrap">
+                  <span class="sal-section-title">Geometria Ruchu</span>
+                </span>
+                <svg class="sal-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M2.5 5L7 9.5L11.5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </summary>
+
+              <div class="sal-section-body space-y-5">
                 <div>
                   <label class="text-[10px] font-mono text-[#9C9890] uppercase tracking-[0.15em] mb-2 block"
                     >Kształt Trajektorii</label
@@ -119,16 +209,7 @@
                   >
                   <button id="btnDirection" class="btn-secondary w-full">Zgodnie z wskaz.</button>
                 </div>
-              </div>
-            </div>
 
-            <!-- Sekcja: Orientacja i Barwa -->
-            <div class="glass p-6 flex flex-col gap-5">
-              <h2 class="text-xs font-mono font-semibold text-[#00E5CC] uppercase tracking-[0.2em]">
-                Przestrzeń i Barwa
-              </h2>
-
-              <div class="space-y-5">
                 <div>
                   <label class="text-[10px] font-mono text-[#9C9890] uppercase tracking-[0.15em] mb-2 block"
                     >Pochylenie (X / Pitch)</label
@@ -151,46 +232,21 @@
                     >
                   </div>
                 </div>
-                <div>
-                  <label class="text-[10px] font-mono text-[#9C9890] uppercase tracking-[0.15em] mb-2 block"
-                    >Kształt fali (Timbre)</label
-                  >
-                  <select id="waveformSelect" class="w-full">
-                    <option value="sine">Sinusoidalna (Łagodna)</option>
-                    <option value="triangle" selected>Trójkątna (Zbalansowana)</option>
-                    <option value="sawtooth">Piłokształtna (Ostra)</option>
-                    <option value="square">Prostokątna (Cyfrowa)</option>
-                  </select>
-                </div>
-                <button id="btnToggleAudio" class="btn-toggle is-idle">ODTWÓRZ</button>
               </div>
-            </div>
+            </details>
 
-            <!-- Sekcja: Źródło i nagrywanie -->
-            <div class="glass p-6 flex flex-col gap-5" id="panelNagrywanie">
-              <h2 class="text-xs font-mono font-semibold text-[#00E5CC] uppercase tracking-[0.2em]">
-                Źródło i nagrywanie
-              </h2>
+            <!-- Sekcja: Nagrywanie (rozwijana) -->
+            <details class="glass sal-section" id="panelNagrywanie" open>
+              <summary class="sal-section-header">
+                <span class="sal-section-title-wrap">
+                  <span class="sal-section-title">Nagrywanie</span>
+                </span>
+                <svg class="sal-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M2.5 5L7 9.5L11.5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </summary>
 
-              <div class="space-y-5">
-                <!-- Własny dźwięk w pętli -->
-                <div>
-                  <label class="text-[10px] font-mono text-[#9C9890] uppercase tracking-[0.15em] mb-2 block"
-                    >Własny dźwięk (pętla)</label
-                  >
-                  <input
-                    id="fileInput"
-                    type="file"
-                    accept="audio/*,.opus,.mp3,.wav,.ogg,.flac,.m4a,.aac"
-                    style="display: none"
-                  />
-                  <button id="btnLoadFile" class="btn-secondary w-full">Wczytaj plik audio…</button>
-                  <div id="srcInfo" class="mt-2 font-mono text-[11px] text-[#9C9890]">Źródło: synteza (oscylator)</div>
-                  <button id="btnClearFile" class="btn-ghost-inline mt-2" style="display: none">
-                    ↺ Wróć do syntezy
-                  </button>
-                </div>
-
+              <div class="sal-section-body space-y-5">
                 <!-- Liczba powtórzeń figury -->
                 <div>
                   <label class="text-[10px] font-mono text-[#9C9890] uppercase tracking-[0.15em] mb-2 block"
@@ -220,7 +276,7 @@
                 </button>
                 <div id="recStatus" class="font-mono text-[11px] text-[#9C9890]" style="min-height: 16px"></div>
               </div>
-            </div>
+            </details>
           </div>
 
           <!-- LEWO: Główny ekran wizualizacji — Radar i Oś Pionowa (order-1 na desktopie) -->

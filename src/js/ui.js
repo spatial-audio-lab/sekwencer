@@ -143,14 +143,23 @@ export function wireControls() {
     e.target.textContent = state.direction === 1 ? 'Zgodnie z wskaz.' : 'Przeciwnie'
   }
 
-  // ODTWÓRZ / WYCISZ (zmiana barwy + napisu; lazy-init audio)
+  // ===== GŁOŚNOŚĆ =====
+  document.getElementById('volumeRange').oninput = (e) => {
+    state.volume = parseInt(e.target.value) / 100
+    document.getElementById('volumeVal').textContent = e.target.value
+    if (state.audioActive && state.ctx && state.gain) {
+      state.gain.gain.setTargetAtTime(state.volume, state.ctx.currentTime, 0.05)
+    }
+  }
+
+  // ODTWÓRZ / ZATRZYMAJ (zmiana barwy + napisu; lazy-init audio)
   const btnToggle = document.getElementById('btnToggleAudio')
   btnToggle.onclick = async () => {
     await ensureAudio()
     state.audioActive = !state.audioActive
-    state.gain.gain.setTargetAtTime(state.audioActive ? 0.35 : 0, state.ctx.currentTime, 0.1)
+    state.gain.gain.setTargetAtTime(state.audioActive ? state.volume : 0, state.ctx.currentTime, 0.1)
     if (state.audioActive) {
-      btnToggle.textContent = 'WYCISZ'
+      btnToggle.textContent = 'ZATRZYMAJ'
       btnToggle.classList.remove('is-idle')
       btnToggle.classList.add('is-active')
     } else {
@@ -163,6 +172,29 @@ export function wireControls() {
     ind.style.boxShadow = state.audioActive ? '0 0 10px rgba(0,229,204,0.5)' : 'none'
     setPlayStatus(state.audioActive)
   }
+
+  // ===== PRZEŁĄCZNIK RODZAJU ŹRÓDŁA (Synteza / Dźwięk użytkownika) =====
+  // Uwaga: to przełącznik WIDOKU paneli — faktyczny state.mode zmienia się
+  // dopiero gdy użytkownik wczyta plik (fileInput.onchange) albo go wyczyści
+  // (btnClearFile), zgodnie z dotychczasową logiką audio.js/buildSource().
+  const srcSynthPanel = document.getElementById('srcSynthPanel')
+  const srcFilePanel = document.getElementById('srcFilePanel')
+  const btnSrcSynth = document.getElementById('srcModeSynthBtn')
+  const btnSrcFile = document.getElementById('srcModeFileBtn')
+  function setSourceView(view) {
+    const isFile = view === 'file'
+    srcSynthPanel.classList.toggle('hidden', isFile)
+    srcFilePanel.classList.toggle('hidden', !isFile)
+    btnSrcSynth.classList.toggle('is-active', !isFile)
+    btnSrcSynth.setAttribute('aria-checked', String(!isFile))
+    btnSrcFile.classList.toggle('is-active', isFile)
+    btnSrcFile.setAttribute('aria-checked', String(isFile))
+  }
+  btnSrcSynth.onclick = () => {
+    if (state.mode === 'file') document.getElementById('btnClearFile').click()
+    setSourceView('synth')
+  }
+  btnSrcFile.onclick = () => setSourceView('file')
 
   // ===== WCZYTYWANIE WŁASNEGO DŹWIĘKU (pętla) =====
   const fileInput = document.getElementById('fileInput')
@@ -181,6 +213,7 @@ export function wireControls() {
       buildSource()
       info.innerHTML = `Źródło: <span style="color:#00E5CC">${f.name}</span> (pętla)`
       document.getElementById('btnClearFile').style.display = 'inline-block'
+      setSourceView('file')
     } catch (err) {
       state.mode = 'synth'
       info.innerHTML = `<span style="color:#FF3355">Nie udało się wczytać/zdekodować pliku</span>`
@@ -193,6 +226,7 @@ export function wireControls() {
     if (state.ctx) buildSource()
     document.getElementById('srcInfo').textContent = 'Źródło: synteza (oscylator)'
     document.getElementById('btnClearFile').style.display = 'none'
+    setSourceView('synth')
   }
 
   // ===== NAGRYWANIE =====
