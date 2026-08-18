@@ -61,6 +61,11 @@ export function setPlayStatus(playing) {
 
 // ===== KONTROLKI =====
 export function wireControls() {
+  const speedRange = document.getElementById('speedRange')
+  const speedVal = document.getElementById('speedVal')
+
+  speedRange.value = state.speed
+  speedVal.textContent = `${state.speed.toFixed(1)} m/s`
   document.getElementById('shapeSelect').onchange = (e) => {
     state.shape = e.target.value
     updateTrajectoryLine()
