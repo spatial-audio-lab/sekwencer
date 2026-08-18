@@ -253,6 +253,27 @@ select:focus-visible {
   display: none !important;
 }
 
+/* ===== Reset kamery sceny 3D (zgłoszenie Oskara 18.08) ===== */
+.sal-camera-reset {
+  font-family: 'Azeret Mono', monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9c9890;
+  background: rgba(10, 12, 8, 0.55);
+  border: 1px solid rgba(240, 235, 224, 0.14);
+  border-radius: 0;
+  padding: 8px 12px;
+  min-height: 0;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.sal-camera-reset:hover,
+.sal-camera-reset:focus-visible {
+  color: #00e5cc;
+  border-color: #00e5cc;
+}
+
 /* ===== Modale Pomoc / O projekcie (pasek v3.1, sekcja "Treść zakładek") ===== */
 .sal-modal-overlay {
   position: fixed;

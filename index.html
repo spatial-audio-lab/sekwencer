@@ -185,8 +185,8 @@
                   >
                   <div class="flex items-center gap-4 min-h-[44px]">
                     <input type="range" id="speedRange" min="0.1" max="4" step="0.1" value="1" class="flex-1" />
-                    <span class="font-mono text-sm text-[#00E5CC] min-w-[64px] text-right"
-                      ><span id="speedVal">1.0</span>×</span
+                    <span class="font-mono text-sm text-[#00E5CC] min-w-[76px] text-right"
+                      ><span id="speedVal">1.0 m/s</span></span
                     >
                   </div>
                 </div>
@@ -294,9 +294,16 @@
               </div>
             </div>
 
-            <!-- Podpowiedź obsługi kamery -->
-            <div class="absolute top-6 right-6 font-mono text-[10px] text-slate-500 bg-black/30 px-3 py-2 border border-white/5 pointer-events-none">
-              PRZECIĄGNIJ: OBRÓT · SCROLL: ZOOM
+            <!-- Podpowiedź obsługi kamery + reset widoku -->
+            <div class="absolute top-6 right-6 flex flex-col items-end gap-2">
+              <div class="font-mono text-[10px] text-slate-500 bg-black/30 px-3 py-2 border border-white/5 pointer-events-none">
+                PRZECIĄGNIJ: OBRÓT · SCROLL: ZOOM
+              </div>
+              <!-- Zgłoszenie Oskara 18.08: łatwo się zgubić po obróceniu sceny, potrzebny
+                   szybki powrót "na wprost". Logika: scene3d.js#resetCamera(). -->
+              <button type="button" id="btnResetCamera" class="sal-camera-reset" title="Zresetuj widok kamery">
+                ⟲ RESET WIDOKU
+              </button>
             </div>
           </div>
         </div>

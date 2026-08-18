@@ -49,7 +49,31 @@ export function computePoint(t) {
   return p
 }
 
-// Prędkość kątowa figury [rad/s] — spójna z pętlą na żywo (0.016*speed / klatkę @60fps)
-export function omega() {
-  return 0.96 * state.speed
+// Lokalna "prędkość" parametru trajektorii — moduł pochodnej computePoint względem t,
+// tj. ile jednostek długości krzywej odpowiada jednostce parametru t w punkcie t.
+// Używane, żeby prędkość ze suwaka (m/s) była prędkością liniową WZDŁUŻ krzywej,
+// a nie tylko stałą prędkością kątową — bez tego figury o nierównym rozkładzie
+// krzywizny (kwadrat, lemniskata, węzeł Lissajous) przyspieszałyby/zwalniałyby
+// pozornie w miejscach, gdzie krzywa jest bardziej stroma.
+export function trajectoryMetric(t) {
+  const epsilon = 0.001
+  const a = computePoint(t)
+  const b = computePoint(t + epsilon)
+
+  return Math.max(
+    Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z) / epsilon,
+    0.001,
+  )
+}
+
+// JEDNA implementacja całkowania parametru t w czasie, współdzielona przez podgląd
+// na żywo (ui.js#update) i eksport offline (audio.js#renderBinaural/renderAmbix).
+// Zgłoszenie 18.08 (Oskar): eksportowany WAV musi brzmieć tak samo jak podgląd na
+// żywo — dwie osobne implementacje tej samej wielkości fizycznej to dokładnie błąd
+// "v9 Sfery" (dwie niezależne trajektorie rozjeżdżające się cicho), więc obie strony
+// wołają tę samą funkcję zamiast liczyć czas przez omega().
+export function stepTrajectory(t, dt, speed, direction) {
+  if (speed <= 0) return t
+  const metric = trajectoryMetric(t)
+  return t + direction * (speed * dt) / metric
 }

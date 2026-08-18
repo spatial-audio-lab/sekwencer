@@ -2,15 +2,25 @@
 // nagrywanie. Przeniesione 1:1 z poprzedniego index.html + integracja z nowym
 // paskiem v3.1 (kropka statusu zamiast tekstu "Audio Context: Idle/Running").
 import { state } from './state.js'
-import { computePoint } from './math.js'
+import { computePoint, stepTrajectory } from './math.js'
 import { ensureAudio, buildSource, renderBinaural, renderAmbix, encodeWavFloat32 } from './audio.js'
 import { setHeaderPlaying } from './header.js'
-import { renderScene3D, resizeScene3D, updateTrajectoryLine } from './scene3d.js'
+import { renderScene3D, resizeScene3D, updateTrajectoryLine, resetCamera } from './scene3d.js'
+
+// Prędkość slidera to metry/sekundę WZDŁUŻ krzywej (nie rad/s) — krok parametru t jest
+// dzielony przez lokalną pochodną trajektorii (stepTrajectory w math.js), więc figury
+// o nierównym rozkładzie krzywizny (np. lemniskata, węzeł Lissajous) poruszają się ze
+// stałą prędkością liniową, a nie tylko stałą prędkością kątową. Ta sama funkcja
+// (stepTrajectory) jest też używana przy eksporcie offline w audio.js#renderBinaural/
+// renderAmbix, żeby eksportowany WAV brzmiał identycznie jak podgląd na żywo.
+function advanceTrajectory(dt) {
+  state.time = stepTrajectory(state.time, dt, state.speed, state.direction)
+}
 
 // ===== PĘTLA (wizualizacja 3D + audio, jedna wspólna pozycja state.pos) =====
 export function update() {
   if (state.isRunning) {
-    state.time += 0.016 * state.speed * state.direction
+    advanceTrajectory(0.016)
     state.pos = computePoint(state.time)
     if (state.ctx && state.panner) {
       const now = state.ctx.currentTime
@@ -41,21 +51,6 @@ export function setPlayStatus(playing) {
   setHeaderPlaying(playing)
 }
 
-// ===== ROZMIAR RADARU (responsywny) =====
-export function resizeRadar() {
-  const c = state.canvas
-  if (!c) return
-  const panel = c.closest('.glass')
-  const availH = (panel ? panel.clientHeight : 600) - 120
-  const availW = (panel ? panel.clientWidth : 600) - 170
-  const size = Math.max(280, Math.min(availW, availH))
-  const dpr = window.devicePixelRatio || 1
-  c.style.width = size + 'px'
-  c.style.height = size + 'px'
-  c.width = Math.round(size * dpr)
-  c.height = Math.round(size * dpr)
-}
-
 // ===== KONTROLKI =====
 export function wireControls() {
   document.getElementById('shapeSelect').onchange = (e) => {
@@ -68,7 +63,7 @@ export function wireControls() {
   }
   document.getElementById('speedRange').oninput = (e) => {
     state.speed = parseFloat(e.target.value)
-    document.getElementById('speedVal').textContent = state.speed.toFixed(1)
+    document.getElementById('speedVal').textContent = `${state.speed.toFixed(1)} m/s`
   }
   document.getElementById('sizeRange').oninput = (e) => {
     state.size = parseInt(e.target.value)
@@ -221,6 +216,8 @@ export function wireControls() {
       btnRecord.innerHTML = prev
     }
   }
+
+  document.getElementById('btnResetCamera').onclick = () => resetCamera()
 
   window.addEventListener('resize', resizeScene3D)
 }

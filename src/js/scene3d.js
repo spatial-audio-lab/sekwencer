@@ -22,6 +22,12 @@ const AMBER = 0xffab00
 const DIM = 0x9c9890
 const BLACK = 0x0a0c08
 
+// Domyslne ustawienie kamery — uzyte przy starcie i przy resetCamera() (przycisk
+// "RESET WIDOKU" w index.html, zgloszenie Oskara 18.08: latwo sie zgubic po obrocie,
+// potrzebny szybki powrot "na wprost").
+const DEFAULT_CAMERA_POS = new THREE.Vector3(95, 70, 135)
+const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0)
+
 let renderer, scene, camera, controls
 let trajectoryLine, sourceMesh, glowSprite, listenerMesh
 let container
@@ -32,7 +38,7 @@ export function initScene3D(el) {
   scene.background = new THREE.Color(BLACK)
 
   camera = new THREE.PerspectiveCamera(50, 1, 0.1, 2000)
-  camera.position.set(95, 70, 135)
+  camera.position.copy(DEFAULT_CAMERA_POS)
 
   renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
@@ -43,7 +49,7 @@ export function initScene3D(el) {
   controls.dampingFactor = 0.08
   controls.minDistance = 30
   controls.maxDistance = 420
-  controls.target.set(0, 0, 0)
+  controls.target.copy(DEFAULT_TARGET)
 
   // Siatka odniesienia (płaszczyzna XZ) — amber środek, dim reszta, mocno wyciszona
   // (zasada 0 manifestu: narzędzia = wydajność i minimalizm, nie immersja Huba).
@@ -54,10 +60,27 @@ export function initScene3D(el) {
 
   // Marker słuchacza w początku układu współrzędnych — nieruchomy punkt odniesienia
   // (odpowiednik "TY" w Sferze, inny wizualnie bo inna technologia, ta sama rola).
-  listenerMesh = new THREE.Mesh(
-    new THREE.OctahedronGeometry(2.2, 0),
-    new THREE.MeshBasicMaterial({ color: DIM, transparent: true, opacity: 0.7 }),
-  )
+  // Kształt musi POKAZYWAĆ KIERUNEK "przód" — poprzedni ośmiościan był symetryczny
+  // (czytał się jak "kostka" bez orientacji), Oskar zgłosił że łatwo się zgubić na
+  // scenie 3D bez wyraźnego punktu odniesienia (18.08). Grupa: spłaszczony walec
+  // ("korpus") + stożek ("nos") wskazujący -Z — to konwencja Web Audio: domyślna
+  // orientacja AudioListener to (0,0,-1), zgodna z dawnymi etykietami "Przód (-Z)"
+  // na starym radarze 2D (Etap 1).
+  listenerMesh = new THREE.Group()
+  const listenerMat = new THREE.MeshBasicMaterial({ color: DIM, transparent: true, opacity: 0.6 })
+
+  const listenerBody = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 1.2, 20), listenerMat)
+  listenerBody.position.y = 0.6
+  listenerMesh.add(listenerBody)
+
+  const listenerNose = new THREE.Mesh(new THREE.ConeGeometry(1.3, 4.2, 20), listenerMat)
+  // Stożek ma domyślnie wierzchołek w +Y; obrót -90° wokół X przenosi go na -Z
+  // (ta sama formuła rotacji co Math3D.rotateX w math.js — sprawdzone: punkt (0,1,0)
+  // trafia w (0,0,-1)).
+  listenerNose.rotation.x = -Math.PI / 2
+  listenerNose.position.y = 0.6
+  listenerMesh.add(listenerNose)
+
   scene.add(listenerMesh)
 
   // Trajektoria — linia przerywana amber (odpowiednik dawnego "ghost path" na radarze).
@@ -97,7 +120,7 @@ export function initScene3D(el) {
   // Hak diagnostyczny dla harnessu Playwright (scripts/verify-scene3d.mjs) — analogicznie
   // do wzorców z innych apek w projekcie (np. przechwytywanie eksportu w Scenie/Sferze).
   // Nie wpływa na działanie apki, tylko odsłania uchwyty do pomiaru.
-  window.__orbita3d = { scene, camera, controls, sourceMesh, trajectoryLine }
+  window.__orbita3d = { scene, camera, controls, sourceMesh, trajectoryLine, listenerMesh }
 
   return { scene, camera, renderer, controls }
 }
@@ -140,6 +163,30 @@ export function renderScene3D() {
   glowSprite.position.copy(sourceMesh.position)
   controls.update()
   renderer.render(scene, camera)
+}
+
+// Przycisk "RESET WIDOKU" (index.html, wołany z ui.js) — wraca kamerę do domyślnego
+// ustawienia startowego. Zgłoszenie Oskara 18.08: po obróceniu sceny łatwo stracić
+// orientację, potrzebny szybki powrót "na wprost" bez przeładowania strony.
+export function resetCamera() {
+  if (!camera || !controls) return
+  // OrbitControls (patrz node_modules/three/.../OrbitControls.js#update) NIE liczy
+  // pozycji kamery prosto z camera.position — trzyma WŁASNY wewnętrzny stan
+  // (_sphericalDelta, _panOffset), zebrany z niedawnego przeciągania, i co klatkę
+  // DOLICZA go do sferycznych współrzędnych wyliczonych z aktualnej pozycji.
+  // Pierwsza próba (samo camera.position.copy() + update()) zostawiała ten stan
+  // nietknięty, więc kolejny update() odciągał kamerę z powrotem w stronę gestu
+  // sprzed resetu. Wyłączenie enableDamping na czas resetu też nie wystarczało:
+  // w gałęzi bez tłumienia update() dolicza CAŁY zalegający delta jednorazowo
+  // (zamiast tylko dampingFactor ≈ 8% na klatkę) — w teście dało to WIĘKSZE
+  // odchylenie niż poprzednio, nie mniejsze. Właściwe rozwiązanie: wyzerować same
+  // te wewnętrzne akumulatory przed update(), tak jak robi to OrbitControls.reset()
+  // przy starcie (kiedy są naturalnie zerowe) — patrz też controls._panOffset.
+  controls._sphericalDelta.set(0, 0, 0)
+  controls._panOffset.set(0, 0, 0)
+  camera.position.copy(DEFAULT_CAMERA_POS)
+  controls.target.copy(DEFAULT_TARGET)
+  controls.update()
 }
 
 export function resizeScene3D() {
