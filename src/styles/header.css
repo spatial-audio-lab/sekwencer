@@ -1,0 +1,261 @@
+/* Pasek marki SAL v3.1 — claude/zasady-zgodnosci-z-manifestem.md sekcja 4a. */
+
+@keyframes salPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.82);
+  }
+}
+@keyframes salRing {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+.sal-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  height: 68px;
+  padding: 0 20px;
+  background: #0a0c08;
+  border-bottom: 1px solid rgba(240, 235, 224, 0.14);
+  font-family: 'Lexend', sans-serif;
+  transition: box-shadow 0.2s ease;
+}
+.sal-bar.is-playing {
+  box-shadow: inset 0 -1px 0 rgba(190, 255, 0, 0.1);
+}
+
+.sal-bar-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.sal-pill {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 7px 14px 7px 9px;
+  border: 1px solid rgba(240, 235, 224, 0.14);
+  text-decoration: none;
+  flex: none;
+}
+.sal-pill-mark {
+  height: 38px;
+  width: auto;
+  display: block;
+}
+.sal-pill-text {
+  font-family: 'Lexend', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  color: #f0ebe0;
+}
+.sal-acid {
+  color: #beff00;
+}
+
+.sal-sep {
+  width: 1px;
+  height: 34px;
+  background: rgba(240, 235, 224, 0.14);
+  margin: 0 20px;
+  flex: none;
+}
+.sal-sep--inline {
+  height: 20px;
+  margin: 0 18px;
+}
+
+.sal-status-dot {
+  position: relative;
+  width: 11px;
+  height: 11px;
+  flex: none;
+  margin-right: 16px;
+  border-radius: 50%;
+  background: rgba(240, 235, 224, 0.18);
+  border: 1px solid rgba(240, 235, 224, 0.28);
+}
+.sal-status-dot.is-playing {
+  background: #00e5cc;
+  border: none;
+  animation: salPulse 1.5s ease-in-out infinite;
+}
+.sal-status-dot.is-playing::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1px solid #00e5cc;
+  animation: salRing 1.5s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sal-status-dot,
+  .sal-status-dot.is-playing,
+  .sal-status-dot.is-playing::after {
+    animation: none !important;
+  }
+}
+
+.sal-name-wrap {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+}
+.sal-name {
+  font-family: 'Lexend', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: #f0ebe0;
+  white-space: nowrap;
+}
+.sal-desc {
+  font-family: 'Lexend', sans-serif;
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 1.2;
+  color: #9c9890;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sal-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 26px;
+  flex: none;
+  margin-left: 32px;
+  font-family: 'Azeret Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.sal-tab {
+  display: flex;
+  align-items: center;
+  color: #9c9890;
+  border-bottom: 2px solid transparent;
+  text-decoration: none;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.sal-tab:hover {
+  color: #f0ebe0;
+}
+.sal-tab.is-active {
+  color: #beff00;
+  border-bottom: 2px solid #beff00;
+}
+.sal-tab[aria-disabled='true'] {
+  cursor: default;
+  opacity: 0.55;
+}
+.sal-tab[aria-disabled='true']:hover {
+  color: #9c9890;
+}
+
+.sal-burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  flex: none;
+  margin-left: 10px;
+  padding: 8px 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.sal-burger span {
+  width: 18px;
+  height: 1.5px;
+  background: #9c9890;
+  display: block;
+}
+
+.sal-mobile-menu {
+  display: none;
+}
+
+@media (max-width: 380px) {
+  .sal-bar {
+    height: 60px;
+    padding: 0 12px;
+  }
+  .sal-pill {
+    padding: 5px 10px 5px 6px;
+    gap: 8px;
+  }
+  .sal-pill-mark {
+    height: 30px;
+  }
+  .sal-pill-text {
+    font-size: 15px;
+  }
+  .sal-sep {
+    margin: 0 11px;
+  }
+  .sal-status-dot {
+    width: 9px;
+    height: 9px;
+    margin-right: 10px;
+  }
+  .sal-name-wrap {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+  }
+  .sal-name {
+    font-size: 16px;
+  }
+  .sal-desc {
+    font-size: 11.5px;
+    max-width: 100%;
+  }
+  .sal-sep--inline {
+    display: none;
+  }
+  .sal-tabs {
+    display: none;
+  }
+  .sal-burger {
+    display: flex;
+  }
+  .sal-mobile-menu.is-open {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: #0a0c08;
+    border-bottom: 1px solid rgba(240, 235, 224, 0.14);
+    padding: 8px 12px 14px;
+    gap: 4px;
+  }
+  .sal-mobile-menu .sal-tab {
+    padding: 10px 4px;
+    border-bottom: 1px solid rgba(240, 235, 224, 0.08);
+  }
+}

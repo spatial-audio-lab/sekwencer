@@ -1,0 +1,13 @@
+/* Układ strony — reszta layoutu (siatka radar/panel) korzysta z klas Tailwind
+   bezpośrednio w index.html, tak jak w poprzedniej wersji jednoplikowej. */
+html,
+body,
+#app {
+  height: 100%;
+}
+#app {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}

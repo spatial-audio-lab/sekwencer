@@ -1,0 +1,31 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# docs/ JEST commitowany (output builda, tymczasowy sposób publikacji do
+# czasu Etapu 4 / GitHub Actions — patrz komentarz w vite.config.js).
+# Poniżej tylko scratch z weryfikacji, nie wchodzi do repo.
+scripts/out
+scripts/render
+scripts/tw
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

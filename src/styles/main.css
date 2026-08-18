@@ -1,0 +1,170 @@
+/* Sekwencer — style wg SAL Design Manifest v3.0 + pasek v3.1 (sekcja 4a).
+   Przeniesione z poprzedniego jednoplikowego index.html; blok "pasek v3.1" jest nowy. */
+@import './header.css';
+@import './layout.css';
+
+body {
+  font-family: 'Lexend', sans-serif;
+  background: #0a0c08;
+  color: #f0ebe0;
+  overflow: hidden;
+  height: 100vh;
+  margin: 0;
+}
+
+/* Panel narzędzia wg manifestu: pełne tło --bg2, ostre krawędzie (brak
+   zaokrągleń), 1px border. Bez backdrop-filter — manifest: narzędzia
+   rezygnują z filtrów/grain na rzecz mocy dla WebAudio (sekcja 01/08). */
+.glass {
+  background: #12150f;
+  border: 1px solid rgba(240, 235, 224, 0.14);
+  border-radius: 0;
+}
+.indicator-glow {
+  box-shadow: 0 0 15px rgba(255, 171, 0, 0.5);
+}
+input[type='range'] {
+  accent-color: #00e5cc;
+}
+
+/* ===== Przyciski — DOKŁADNIE wg manifestu (sekcja 05, brak zaokrągleń) ===== */
+.btn-primary {
+  font-family: 'Lexend', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  background: #00e5cc;
+  color: #0a0c08;
+  border: none;
+  border-radius: 0;
+  padding: 14px 24px;
+  min-height: 44px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.btn-primary:hover {
+  opacity: 0.85;
+}
+.btn-primary:active {
+  opacity: 0.7;
+}
+.btn-secondary {
+  font-family: 'Lexend', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  background: transparent;
+  color: #f0ebe0;
+  border: 1px solid rgba(240, 235, 224, 0.14);
+  border-radius: 0;
+  padding: 14px 24px;
+  min-height: 44px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.btn-secondary:hover {
+  border-color: #00e5cc;
+  color: #00e5cc;
+}
+.btn-secondary:active {
+  opacity: 0.7;
+}
+.btn-toggle {
+  font-family: 'Lexend', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border-radius: 0;
+  padding: 14px 24px;
+  min-height: 44px;
+  width: 100%;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.btn-toggle.is-idle {
+  background: transparent;
+  color: #00e5cc;
+  border: 1px solid rgba(0, 229, 204, 0.5);
+}
+.btn-toggle.is-idle:hover {
+  background: rgba(0, 229, 204, 0.1);
+}
+.btn-toggle.is-active {
+  background: #00e5cc;
+  color: #0a0c08;
+  border: 1px solid #00e5cc;
+}
+.btn-toggle.is-active:hover {
+  opacity: 0.85;
+}
+
+.btn-ghost-inline {
+  display: inline-block;
+  font-family: 'Azeret Mono', monospace;
+  font-weight: 500;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #9c9890;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.btn-ghost-inline:hover {
+  color: #f0ebe0;
+}
+
+select {
+  border-width: 1px;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+  background-color: #12150f;
+  color: #f0ebe0;
+  border-color: rgba(240, 235, 224, 0.14);
+  border-radius: 0;
+  min-height: 44px;
+  font-family: 'Azeret Mono', monospace;
+}
+select:focus {
+  border-color: #00e5cc;
+  box-shadow: 0 0 0 1px #00e5cc;
+}
+select option {
+  background-color: #12150f;
+  color: #f0ebe0;
+}
+
+.custom-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(240, 235, 224, 0.15);
+  border-radius: 10px;
+}
+
+select:focus-visible {
+  outline: 2px solid #00e5cc;
+  outline-offset: 2px;
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid #00e5cc;
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
