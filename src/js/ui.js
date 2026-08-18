@@ -1,12 +1,13 @@
 // Wiring DOM: rysowanie radaru, synchronizacja UI, kontrolki, wczytywanie pliku,
 // nagrywanie. Przeniesione 1:1 z poprzedniego index.html + integracja z nowym
 // paskiem v3.1 (kropka statusu zamiast tekstu "Audio Context: Idle/Running").
-import { state, VIEW_RANGE } from './state.js'
+import { state } from './state.js'
 import { computePoint } from './math.js'
 import { ensureAudio, buildSource, renderBinaural, renderAmbix, encodeWavFloat32 } from './audio.js'
 import { setHeaderPlaying } from './header.js'
+import { renderScene3D, resizeScene3D, updateTrajectoryLine } from './scene3d.js'
 
-// ===== PĘTLA WIZUALIZACJI (niezależna od audio) =====
+// ===== PĘTLA (wizualizacja 3D + audio, jedna wspólna pozycja state.pos) =====
 export function update() {
   if (state.isRunning) {
     state.time += 0.016 * state.speed * state.direction
@@ -17,73 +18,10 @@ export function update() {
       state.panner.positionY.setTargetAtTime(state.pos.y, now, 0.05)
       state.panner.positionZ.setTargetAtTime(state.pos.z, now, 0.05)
     }
-    draw()
+    renderScene3D()
     syncUI()
   }
   requestAnimationFrame(update)
-}
-
-// ===== RYSOWANIE =====
-export function draw() {
-  const ctx = state.canvasCtx
-  if (!ctx) return
-  const w = state.canvas.width
-  const h = state.canvas.height
-  const cx = w / 2
-  const cy = h / 2
-  const zoom = Math.min(w, h) / 2 / VIEW_RANGE
-
-  ctx.clearRect(0, 0, w, h)
-
-  // Osie
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)'
-  ctx.lineWidth = 1
-  ctx.beginPath()
-  ctx.moveTo(0, cy)
-  ctx.lineTo(w, cy)
-  ctx.moveTo(cx, 0)
-  ctx.lineTo(cx, h)
-  ctx.stroke()
-
-  // Pierścienie referencyjne 20/40/60/80 m
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)'
-  for (let r = 20; r <= 80; r += 20) {
-    ctx.beginPath()
-    ctx.arc(cx, cy, r * zoom, 0, Math.PI * 2)
-    ctx.stroke()
-  }
-
-  // Podgląd trajektorii (Ghost Path)
-  ctx.beginPath()
-  ctx.strokeStyle = 'rgba(255, 171, 0, 0.22)'
-  ctx.setLineDash([5, 5])
-  for (let i = 0; i <= Math.PI * 2 + 0.05; i += 0.05) {
-    const p = computePoint(i)
-    const px = cx + p.x * zoom
-    const pz = cy + p.z * zoom
-    if (i === 0) ctx.moveTo(px, pz)
-    else ctx.lineTo(px, pz)
-  }
-  ctx.stroke()
-  ctx.setLineDash([])
-
-  // Punkt dźwięku (promień lekko zależny od wysokości Y)
-  const tx = cx + state.pos.x * zoom
-  const tz = cy + state.pos.z * zoom
-  const rad = Math.max(4, 9 + Math.max(-5, Math.min(7, state.pos.y * 0.08)))
-  ctx.shadowBlur = 20
-  ctx.shadowColor = '#FFAB00'
-  ctx.fillStyle = '#FFAB00'
-  ctx.beginPath()
-  ctx.arc(tx, tz, rad, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.shadowBlur = 0
-
-  // Wskaźnik wysokości (Y): -60 m..60 m -> 0..100%
-  const elev = document.getElementById('elevationIndicator')
-  const percent = ((state.pos.y + 60) / 120) * 100
-  elev.style.bottom = `${Math.max(0, Math.min(100, percent))}%`
-  document.getElementById('heightLabel').textContent = `${state.pos.y.toFixed(1)}m`
 }
 
 export function syncUI() {
@@ -120,7 +58,10 @@ export function resizeRadar() {
 
 // ===== KONTROLKI =====
 export function wireControls() {
-  document.getElementById('shapeSelect').onchange = (e) => (state.shape = e.target.value)
+  document.getElementById('shapeSelect').onchange = (e) => {
+    state.shape = e.target.value
+    updateTrajectoryLine()
+  }
   document.getElementById('waveformSelect').onchange = (e) => {
     state.waveform = e.target.value
     if (state.mode === 'synth') buildSource()
@@ -129,9 +70,18 @@ export function wireControls() {
     state.speed = parseFloat(e.target.value)
     document.getElementById('speedVal').textContent = state.speed.toFixed(1)
   }
-  document.getElementById('sizeRange').oninput = (e) => (state.size = parseInt(e.target.value))
-  document.getElementById('rotXRange').oninput = (e) => (state.rotX = parseInt(e.target.value))
-  document.getElementById('rotYRange').oninput = (e) => (state.rotY = parseInt(e.target.value))
+  document.getElementById('sizeRange').oninput = (e) => {
+    state.size = parseInt(e.target.value)
+    updateTrajectoryLine()
+  }
+  document.getElementById('rotXRange').oninput = (e) => {
+    state.rotX = parseInt(e.target.value)
+    updateTrajectoryLine()
+  }
+  document.getElementById('rotYRange').oninput = (e) => {
+    state.rotY = parseInt(e.target.value)
+    updateTrajectoryLine()
+  }
   document.getElementById('repsRange').oninput = (e) => {
     state.reps = parseInt(e.target.value)
     document.getElementById('repsVal').textContent = state.reps
@@ -272,5 +222,5 @@ export function wireControls() {
     }
   }
 
-  window.addEventListener('resize', resizeRadar)
+  window.addEventListener('resize', resizeScene3D)
 }

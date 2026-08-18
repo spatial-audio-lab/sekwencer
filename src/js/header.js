@@ -17,10 +17,33 @@ export function setHeaderPlaying(playing) {
 }
 
 // Zakładki po prawej / hamburger na mobile (≤380px, patrz src/styles/header.css).
-// Zestaw i docelowe cele zakładek "Pomoc" / "O projekcie" czekają na decyzję Oskara
-// (patrz claude/etap4-sekwencer-generator-trajektorii-plan.md, "Otwarte pytania") —
-// na razie widoczne wg specyfikacji wizualnej, nieaktywne funkcjonalnie poza "Eksport"
-// (przewija do sekcji nagrywania, która już istnieje w panelu).
+// "Eksport" przewija do sekcji nagrywania (href="#panelNagrywanie", bez JS). "Pomoc" i
+// "O projekcie" otwierają modale (treść ustalona z Oskarem 18.08, patrz
+// claude/etap4-sekwencer-generator-trajektorii-plan.md w projekcie Claude).
+let lastFocusedTrigger = null
+
+function openModal(modal, trigger) {
+  if (!modal) return
+  lastFocusedTrigger = trigger || document.activeElement
+  modal.classList.add('is-open')
+  modal.setAttribute('aria-hidden', 'false')
+  const closeBtn = modal.querySelector('[data-close-modal]')
+  if (closeBtn) closeBtn.focus()
+}
+
+function closeModal(modal) {
+  if (!modal || !modal.classList.contains('is-open')) return
+  modal.classList.remove('is-open')
+  modal.setAttribute('aria-hidden', 'true')
+  if (lastFocusedTrigger && typeof lastFocusedTrigger.focus === 'function') {
+    lastFocusedTrigger.focus()
+  }
+}
+
+function closeAllModals() {
+  document.querySelectorAll('.sal-modal-overlay.is-open').forEach(closeModal)
+}
+
 export function wireHeader() {
   const burger = document.getElementById('salBurger')
   const mobileMenu = document.getElementById('salMobileMenu')
@@ -32,12 +55,26 @@ export function wireHeader() {
   }
   document.querySelectorAll('[data-tab]').forEach((el) => {
     el.addEventListener('click', (e) => {
-      if (el.getAttribute('aria-disabled') === 'true') {
+      const modalId = el.getAttribute('data-modal')
+      if (modalId) {
         e.preventDefault()
-        return
+        openModal(document.getElementById(modalId), el)
       }
       if (mobileMenu) mobileMenu.classList.remove('is-open')
       if (burger) burger.setAttribute('aria-expanded', 'false')
     })
+  })
+
+  // Zamykanie: przycisk ✕, klik na overlay (poza kartą), Escape.
+  document.querySelectorAll('.sal-modal-overlay').forEach((overlay) => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal(overlay)
+    })
+    overlay.querySelectorAll('[data-close-modal]').forEach((btn) => {
+      btn.addEventListener('click', () => closeModal(overlay))
+    })
+  })
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAllModals()
   })
 }

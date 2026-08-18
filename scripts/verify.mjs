@@ -56,7 +56,7 @@ results.pillMarkLoaded = await page.$eval('.sal-pill-mark', (img) => img.natural
 results.faviconOk = (await page.evaluate(() => document.querySelector('link[rel="icon"]').href)).includes('/sekwencer/favicon.svg')
 
 // 2) Radar — canvas ma niezerowe wymiary i coś narysował (nie jest pusty)
-results.canvasSized = await page.$eval('#radarCanvas', (c) => c.width > 0 && c.height > 0)
+results.canvasSized = await page.$eval('#scene3dContainer canvas', (c) => c.width > 0 && c.height > 0)
 
 // 3) Zrzut PRZED (cisza)
 await fs.promises.mkdir('scripts/out', { recursive: true })

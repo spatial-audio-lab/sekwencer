@@ -27,12 +27,9 @@ export const state = {
 
   time: 0,
   pos: { x: 0, y: 0, z: 0 },
-
-  canvas: null,
-  canvasCtx: null,
 }
 
-// Zakres mapowania radaru [m -> połowa kadru]. 85 m mieści figurę o skali 55
-// nawet w narożnikach kwadratu (55*sqrt2 ≈ 78 m) — punkt nigdy nie ucieka z kadru.
+// Promień siatki odniesienia w scenie 3D [m] (scene3d.js). 85 m mieści figurę o skali
+// 55 nawet w narożnikach kwadratu (55*sqrt2 ≈ 78 m) — punkt nigdy nie ucieka poza siatkę.
 export const VIEW_RANGE = 85
 export const MAX_DUR = 180 // limit długości nagrania [s] (ochrona pamięci)

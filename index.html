@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sekwencer — Spatial Audio Lab</title>
+    <title>Orbita — Spatial Audio Lab</title>
 
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="alternate icon" href="favicon.ico" />
@@ -42,23 +42,23 @@
           <span class="sal-sep"></span>
           <span class="sal-status-dot" id="salStatusDot"></span>
           <span class="sal-name-wrap">
-            <span class="sal-name">Sekwencer</span>
+            <span class="sal-name">Orbita</span>
             <span class="sal-sep sal-sep--inline"></span>
             <span class="sal-desc">Trajektorie źródła dźwięku w przestrzeni 3D</span>
           </span>
         </div>
         <nav class="sal-tabs" id="salTabs" aria-label="Nawigacja narzędzia">
           <a href="#panelNagrywanie" class="sal-tab" data-tab="eksport">Eksport</a>
-          <a href="#" class="sal-tab" data-tab="pomoc" aria-disabled="true">Pomoc</a>
-          <a href="#" class="sal-tab" data-tab="o-projekcie" aria-disabled="true">O projekcie</a>
+          <a href="#" class="sal-tab" data-tab="pomoc" data-modal="modalPomoc">Pomoc</a>
+          <a href="#" class="sal-tab" data-tab="o-projekcie" data-modal="modalOProjekcie">O projekcie</a>
         </nav>
         <button class="sal-burger" id="salBurger" aria-label="Menu" aria-expanded="false">
           <span></span><span></span><span></span>
         </button>
         <nav class="sal-mobile-menu" id="salMobileMenu" aria-label="Nawigacja narzędzia (mobile)">
           <a href="#panelNagrywanie" class="sal-tab" data-tab="eksport">Eksport</a>
-          <a href="#" class="sal-tab" data-tab="pomoc" aria-disabled="true">Pomoc</a>
-          <a href="#" class="sal-tab" data-tab="o-projekcie" aria-disabled="true">O projekcie</a>
+          <a href="#" class="sal-tab" data-tab="pomoc" data-modal="modalPomoc">Pomoc</a>
+          <a href="#" class="sal-tab" data-tab="o-projekcie" data-modal="modalOProjekcie">O projekcie</a>
         </nav>
       </header>
 
@@ -279,64 +279,122 @@
             </details>
           </div>
 
-          <!-- LEWO: Główny ekran wizualizacji — Radar i Oś Pionowa (order-1 na desktopie) -->
-          <div class="lg:col-span-8 lg:order-1 glass relative p-8 md:p-12 flex flex-col items-center justify-center">
-            <div class="relative w-full h-full flex items-center justify-center gap-12">
-              <!-- Radar (X/Z) -->
-              <div class="relative">
-                <canvas id="radarCanvas" class="block bg-[#0A0C08]/70 border border-white/5"></canvas>
-
-                <!-- Etykiety kierunków (Zgodne z Web Audio) -->
-                <div
-                  class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-[#9C9890] font-mono uppercase tracking-[0.3em]"
-                >
-                  Przód (-Z)
-                </div>
-                <div
-                  class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-[#9C9890] font-mono uppercase tracking-[0.3em]"
-                >
-                  Tył (+Z)
-                </div>
-                <div
-                  class="absolute -left-12 top-1/2 -translate-y-1/2 text-[10px] text-[#9C9890] font-mono uppercase tracking-[0.3em] rotate-90"
-                >
-                  Lewo (-X)
-                </div>
-                <div
-                  class="absolute -right-12 top-1/2 -translate-y-1/2 text-[10px] text-[#9C9890] font-mono uppercase tracking-[0.3em] -rotate-90"
-                >
-                  Prawo (+X)
-                </div>
-              </div>
-
-              <!-- Oś Pionowa (Y) -->
-              <div class="flex flex-col items-center h-[70%] w-20">
-                <div class="text-[10px] text-[#9C9890] font-mono mb-4 uppercase tracking-widest">Wysokość</div>
-                <div class="relative flex-1 w-3 bg-slate-900 rounded-full border border-white/5 overflow-hidden">
-                  <!-- Środek (0) -->
-                  <div class="absolute top-1/2 left-0 w-full h-[1px] bg-white/10"></div>
-                  <!-- Wskaźnik wysokości -->
-                  <div
-                    id="elevationIndicator"
-                    class="absolute left-1/2 -translate-x-1/2 w-6 h-6 bg-[#FFAB00] rounded-full indicator-glow transition-all duration-75 border-4 border-slate-900"
-                    style="bottom: 50%"
-                  ></div>
-                </div>
-                <div id="heightLabel" class="text-xs font-mono mt-4 text-[#FFAB00] font-bold">0.0m</div>
-              </div>
-            </div>
+          <!-- LEWO: Główny ekran wizualizacji — scena 3D (Three.js, order-1 na desktopie).
+               Etap 2 przebudowy: zastępuje dawny radar canvas 2D + suwak wysokości.
+               Silnik: src/js/scene3d.js (OrbitControls, GridHelper, trajektoria + sfera źródła). -->
+          <div class="lg:col-span-8 lg:order-1 glass relative flex items-stretch justify-center overflow-hidden">
+            <div id="scene3dContainer" class="absolute inset-0" aria-label="Wizualizacja 3D trajektorii źródła dźwięku (przeciągnij, aby obrócić widok)"></div>
 
             <!-- Debug Info / Coordinates -->
-            <div class="absolute bottom-10 left-12 font-mono text-[10px] text-slate-500 space-y-2 bg-black/30 p-4 border border-white/5">
+            <div class="absolute bottom-6 left-6 font-mono text-[10px] text-slate-500 space-y-2 bg-black/30 p-4 border border-white/5 pointer-events-none">
               <div id="debugCoords" class="text-[#FFAB00]">XYZ: [0.00, 0.00, 0.00]</div>
               <div class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-[#00E5CC] animate-pulse"></span>
                 <span>ENGINE: WEB_AUDIO_HRTF_V2</span>
               </div>
             </div>
+
+            <!-- Podpowiedź obsługi kamery -->
+            <div class="absolute top-6 right-6 font-mono text-[10px] text-slate-500 bg-black/30 px-3 py-2 border border-white/5 pointer-events-none">
+              PRZECIĄGNIJ: OBRÓT · SCROLL: ZOOM
+            </div>
           </div>
         </div>
       </main>
+
+      <!-- Modal: Pomoc — treść ustalona z Oskarem 18.08 (patrz
+           claude/etap4-sekwencer-generator-trajektorii-plan.md w projekcie Claude) -->
+      <div class="sal-modal-overlay" id="modalPomoc" aria-hidden="true">
+        <div class="sal-modal" role="dialog" aria-modal="true" aria-labelledby="modalPomocTitle">
+          <button type="button" class="sal-modal-close" data-close-modal aria-label="Zamknij">✕</button>
+          <h2 id="modalPomocTitle" class="sal-modal-h2">Pomoc</h2>
+
+          <h3 class="sal-modal-h3">Co robi Orbita</h3>
+          <p>
+            Orbita pozwala zaprojektować ciągły ruch źródła dźwięku w przestrzeni 3D — wybierasz
+            kształt trajektorii (okrąg, kwadrat, węzeł Lissajous, lemniskata, spirala), jego skalę,
+            prędkość i obrót, a dźwięk faktycznie krąży wokół Ciebie w słuchawkach (HRTF binauralny).
+            To jedyne narzędzie w Spatial Audio Lab, w którym źródło porusza się w czasie — Scena
+            rozstawia dźwięki statycznie na płaszczyźnie, Sfera pozwala odsłuchać i obracać gotowe
+            nagranie pola.
+          </p>
+
+          <h3 class="sal-modal-h3">Jak korzystać</h3>
+          <ol class="sal-modal-list">
+            <li>Wybierz źródło — syntezator (kształt fali) albo własny plik audio w pętli.</li>
+            <li>Ustaw geometrię ruchu — kształt trajektorii, prędkość, skalę, obrót.</li>
+            <li>Kliknij ODTWÓRZ, żeby usłyszeć ruch na żywo (wymagane słuchawki).</li>
+            <li>Obróć scenę 3D przeciągnięciem, przybliż scrollem — sprawdź trajektorię z dowolnej strony.</li>
+            <li>Nagraj do pliku WAV — binauralny (stereo, do słuchawek) albo AmbiX FOA (do dalszej
+              obróbki albo odsłuchu w Sferze).</li>
+          </ol>
+
+          <h3 class="sal-modal-h3">Do czego się przyda</h3>
+          <p>
+            Projektowanie ruchomych elementów scenografii dźwiękowej, eksperymenty z ambisonią
+            wyższego rzędu, punkt wyjścia pod przyszłe rozszerzenia (więcej kształtów trajektorii,
+            rysowanie własnej ścieżki, łączenie z eksportami ze Sceny).
+          </p>
+
+          <p class="sal-modal-note">
+            <strong>Wymagane słuchawki.</strong> Dźwięk jest przestrzenny (binauralny) — na
+            głośnikach stereo znaczna część efektu ginie.
+          </p>
+        </div>
+      </div>
+
+      <!-- Modal: O projekcie — dane zgodne z manifestem sekcja 13 i
+           spatial-audio-lab.github.io/o-projekcie/index.html (Hub, źródło prawdy metadanych) -->
+      <div class="sal-modal-overlay" id="modalOProjekcie" aria-hidden="true">
+        <div class="sal-modal" role="dialog" aria-modal="true" aria-labelledby="modalOProjekcieTitle">
+          <button type="button" class="sal-modal-close" data-close-modal aria-label="Zamknij">✕</button>
+          <h2 id="modalOProjekcieTitle" class="sal-modal-h2">O projekcie</h2>
+
+          <p>
+            Orbita to jedno z siedmiu narzędzi <strong>Spatial Audio Lab</strong> — projektu
+            stypendialnego finansowanego w ramach Krajowego Planu Odbudowy. Powstała jako część
+            archiwum dźwięku przestrzennego łączącego inżynierię dźwięku z edukacją teatralną
+            i technikami uważności.
+          </p>
+
+          <h3 class="sal-modal-h3">Jak to działa</h3>
+          <p>
+            Web Audio API (<code>PannerNode</code>, model HRTF) spatializuje dźwięk w czasie
+            rzeczywistym; ta sama pozycja karmi jednocześnie wizualizację 3D (Three.js) i panner
+            audio, więc to, co widzisz, jest dokładnie tym, co słyszysz. Eksport do WAV 48 kHz /
+            32-bit float — binauralny (stereo) albo ambisoniczny FOA w formacie AmbiX.
+          </p>
+
+          <h3 class="sal-modal-h3">Metadane</h3>
+          <dl class="sal-modal-meta">
+            <div><dt>Autor</dt><dd>Oskar Hamerski</dd></div>
+            <div><dt>Program</dt><dd>Stypendia kulturowe KPO — Narodowy Instytut Muzyki i Tańca (NIMiT)</dd></div>
+            <div><dt>Umowa</dt><dd>143/KPO.STYPENDIA/NIMIT/2025</dd></div>
+            <div><dt>Technologia</dt><dd>Web Audio API (HRTF) + Three.js</dd></div>
+          </dl>
+
+          <h3 class="sal-modal-h3">Finansowanie</h3>
+          <p>
+            Projekt sfinansowany przez Unię Europejską — NextGenerationEU. Wsparcie w ramach
+            Krajowego Planu Odbudowy i Zwiększania Odporności, Inwestycja A2.5.1: Program
+            wspierania działalności podmiotów sektora kultury i przemysłów kreatywnych na rzecz
+            stymulowania ich rozwoju. Instytucja Wspierająca: Narodowy Instytut Muzyki i Tańca.
+          </p>
+
+          <div class="sal-kpo-strip">
+            <img
+              src="assets/kpo/KPO.jpg"
+              alt="Logotypy: Krajowy Plan Odbudowy, Rzeczpospolita Polska, Sfinansowane przez Unię Europejską NextGenerationEU"
+            />
+          </div>
+
+          <p>
+            <a href="https://spatial-audio-lab.github.io/o-projekcie/" class="sal-modal-link" target="_blank" rel="noopener">
+              Pełne informacje o projekcie (wskaźniki, certyfikaty, kontakt) ↗
+            </a>
+          </p>
+        </div>
+      </div>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

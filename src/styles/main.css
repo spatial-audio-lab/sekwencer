@@ -252,3 +252,139 @@ select:focus-visible {
 .hidden {
   display: none !important;
 }
+
+/* ===== Modale Pomoc / O projekcie (pasek v3.1, sekcja "Treść zakładek") ===== */
+.sal-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 12, 8, 0.82);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 60;
+  padding: 5vh 24px;
+  overflow-y: auto;
+}
+.sal-modal-overlay.is-open {
+  display: flex;
+}
+.sal-modal {
+  position: relative;
+  background: #12150f;
+  border: 1px solid rgba(240, 235, 224, 0.14);
+  border-radius: 0;
+  max-width: 640px;
+  width: 100%;
+  padding: 40px;
+}
+.sal-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(240, 235, 224, 0.14);
+  color: #9c9890;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.sal-modal-close:hover {
+  color: #f0ebe0;
+  border-color: #00e5cc;
+}
+.sal-modal-h2 {
+  font-family: 'Lexend', sans-serif;
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: #f0ebe0;
+  margin-bottom: 24px;
+}
+.sal-modal-h3 {
+  font-family: 'Azeret Mono', monospace;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #00e5cc;
+  margin: 24px 0 12px;
+}
+.sal-modal-h2 + .sal-modal-h3 {
+  margin-top: 0;
+}
+.sal-modal p {
+  font-family: 'Lexend', sans-serif;
+  font-size: 0.85rem;
+  line-height: 1.75;
+  color: #c9c4b8;
+  margin: 0 0 16px;
+}
+.sal-modal p:last-child {
+  margin-bottom: 0;
+}
+.sal-modal-list {
+  font-family: 'Lexend', sans-serif;
+  font-size: 0.85rem;
+  line-height: 1.9;
+  color: #c9c4b8;
+  padding-left: 1.3em;
+}
+.sal-modal-list li {
+  margin-bottom: 6px;
+}
+.sal-modal-note {
+  margin-top: 24px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 171, 0, 0.35);
+  background: rgba(255, 171, 0, 0.06);
+  color: #f0ebe0 !important;
+}
+.sal-modal-note strong {
+  color: #ffab00;
+}
+.sal-modal-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: 'Azeret Mono', monospace;
+  font-size: 0.78rem;
+}
+.sal-modal-meta > div {
+  display: flex;
+  gap: 16px;
+  border-bottom: 1px solid rgba(240, 235, 224, 0.08);
+  padding-bottom: 8px;
+}
+.sal-modal-meta dt {
+  color: #9c9890;
+  min-width: 130px;
+  flex: none;
+}
+.sal-modal-meta dd {
+  color: #f0ebe0;
+  margin: 0;
+}
+.sal-kpo-strip {
+  background: #fff;
+  padding: 16px;
+  margin: 20px 0;
+}
+.sal-kpo-strip img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+}
+.sal-modal-link {
+  color: #00e5cc;
+  text-decoration: underline;
+  font-size: 0.85rem;
+}
+.sal-modal-link:hover {
+  color: #f0ebe0;
+}

@@ -1,15 +1,15 @@
 import './styles/main.css'
 import { state } from './js/state.js'
-import { update, resizeRadar, wireControls, setPlayStatus } from './js/ui.js'
+import { update, wireControls, setPlayStatus } from './js/ui.js'
 import { wireHeader } from './js/header.js'
+import { initScene3D, resizeScene3D } from './js/scene3d.js'
 
 // ===== START (bez ekranu startowego) =====
-// Przeniesione 1:1: pętla rysowania startuje na load, AudioContext leniwie
-// przy pierwszym geście (ensureAudio() w ui.js).
+// Pętla animacji startuje na load, AudioContext leniwie przy pierwszym geście
+// (ensureAudio() w ui.js). Etap 2: scena 3D (Three.js) zastępuje dawny canvas 2D.
 function boot() {
-  state.canvas = document.getElementById('radarCanvas')
-  state.canvasCtx = state.canvas.getContext('2d')
-  resizeRadar()
+  initScene3D(document.getElementById('scene3dContainer'))
+  resizeScene3D()
   wireControls()
   wireHeader()
   state.isRunning = true
