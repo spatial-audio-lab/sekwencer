@@ -1,3 +1,5 @@
+![Zestawienie logotypów KPO, RP i UE](https://raw.githubusercontent.com/spatial-audio-lab/spatial-audio-lab.github.io/main/KPO.jpg)
+
 # Orbita — Spatial Audio Lab
 
 Generator trajektorii przestrzennych: ciągła, zautomatyzowana manipulacja pozycją źródła
