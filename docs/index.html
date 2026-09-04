@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Orbita — Spatial Audio Lab</title>
 
-    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="alternate icon" href="favicon.ico" />
+    <link rel="icon" href="/sekwencer/app-assets/favicon-DNDJ1Yb9.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="/sekwencer/app-assets/favicon-BHzlPLt8.ico" />
     <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png" />
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -29,7 +29,7 @@
       href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&family=Azeret+Mono:wght@300;400;500;700&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="/sekwencer/app-assets/index-DqrqVwIj.js"></script>
+    <script type="module" crossorigin src="/sekwencer/app-assets/index-C0UOXT0C.js"></script>
     <link rel="stylesheet" crossorigin href="/sekwencer/app-assets/index-Tud-eGu9.css">
   </head>
   <body>
@@ -360,7 +360,7 @@
           <h2 id="modalOProjekcieTitle" class="sal-modal-h2">O projekcie</h2>
 
           <p>
-            Orbita to jedno z siedmiu narzędzi <strong>Spatial Audio Lab</strong> — projektu
+            Orbita to jedno z narzędzi <strong>Spatial Audio Lab</strong> — projektu
             stypendialnego finansowanego w ramach Krajowego Planu Odbudowy. Powstała jako część
             archiwum dźwięku przestrzennego łączącego inżynierię dźwięku z edukacją teatralną
             i technikami uważności.
@@ -404,7 +404,17 @@
           </p>
         </div>
       </div>
-    </div>
-
+    </div>
+  <!-- Licznik odwiedzin GoatCounter. Milczy poza spatial-audio-lab.github.io,
+       wiec aplikacja otwarta z dysku nie laczy sie z siecia. -->
+  <script>
+    if (location.hostname === 'spatial-audio-lab.github.io') {
+      var gc = document.createElement('script');
+      gc.async = true;
+      gc.src = 'https://gc.zgo.at/count.js';
+      gc.setAttribute('data-goatcounter', 'https://sal.goatcounter.com/count');
+      document.head.appendChild(gc);
+    }
+  </script>
   </body>
 </html>
