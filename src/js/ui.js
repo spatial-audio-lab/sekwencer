@@ -35,9 +35,12 @@ export function update(frameTime = performance.now()) {
       state.panner.positionZ.setTargetAtTime(state.pos.z, now, 0.05)
     }
 
-    renderScene3D()
     syncUI()
   }
+
+  // renderScene3D ZAWSZE poza warunkiem isRunning, aby controls.update()
+  // i swobodna kamera z tłumieniem reagowały na mysz również w stanie pauzy.
+  renderScene3D()
 
   requestAnimationFrame(update)
 }
@@ -66,29 +69,38 @@ export function wireControls() {
 
   speedRange.value = state.speed
   speedVal.textContent = `${state.speed.toFixed(1)} m/s`
+
+  function onGeometryChange() {
+    updateTrajectoryLine()
+    if (!state.isRunning) {
+      state.pos = computePoint(state.time)
+      syncUI()
+    }
+  }
+
   document.getElementById('shapeSelect').onchange = (e) => {
     state.shape = e.target.value
-    updateTrajectoryLine()
+    onGeometryChange()
   }
   document.getElementById('waveformSelect').onchange = (e) => {
     state.waveform = e.target.value
     if (state.mode === 'synth') buildSource()
   }
   speedRange.oninput = (e) => {
-  state.speed = parseFloat(e.target.value)
-  speedVal.textContent = `${state.speed.toFixed(1)} m/s`
-}
+    state.speed = parseFloat(e.target.value)
+    speedVal.textContent = `${state.speed.toFixed(1)} m/s`
+  }
   document.getElementById('sizeRange').oninput = (e) => {
     state.size = parseInt(e.target.value)
-    updateTrajectoryLine()
+    onGeometryChange()
   }
   document.getElementById('rotXRange').oninput = (e) => {
     state.rotX = parseInt(e.target.value)
-    updateTrajectoryLine()
+    onGeometryChange()
   }
   document.getElementById('rotYRange').oninput = (e) => {
     state.rotY = parseInt(e.target.value)
-    updateTrajectoryLine()
+    onGeometryChange()
   }
   document.getElementById('repsRange').oninput = (e) => {
     state.reps = parseInt(e.target.value)
@@ -114,7 +126,10 @@ export function wireControls() {
   const btnToggle = document.getElementById('btnToggleAudio')
   btnToggle.onclick = async () => {
     await ensureAudio()
+    // audioActive oznacza, ze dzwiek jest slyszalny (wzmocnienie > 0); wezly audio nie sa niszczone.
     state.audioActive = !state.audioActive
+    // isRunning oznacza postep trajektorii w czasie — jedno zrodlo prawdy z odtwarzaniem.
+    state.isRunning = state.audioActive
     state.gain.gain.setTargetAtTime(state.audioActive ? state.volume : 0, state.ctx.currentTime, 0.1)
     if (state.audioActive) {
       btnToggle.textContent = 'ZATRZYMAJ'

@@ -33,3 +33,21 @@ export const state = {
 // 55 nawet w narożnikach kwadratu (55*sqrt2 ≈ 78 m) — punkt nigdy nie ucieka poza siatkę.
 export const VIEW_RANGE = 85
 export const MAX_DUR = 180 // limit długości nagrania [s] (ochrona pamięci)
+
+// Wspólne stałe toru audio i eksportu (Zasada 2: jedna wielkość liczona jeden raz)
+export const DISTANCE_CONFIG = {
+  model: 'inverse',
+  refDistance: 5,
+  maxDistance: 100,
+  rolloffFactor: 0.35,
+}
+
+export const SYNTH_FILTER_CONFIG = {
+  type: 'lowpass',
+  frequency: 1000,
+}
+
+export const EXPORT_LEVELS = {
+  fileGain: 0.5, // zrównanie trybu pliku: binaural miał 0.5, AmbiX miał 0.9 (+5.1 dB)
+  synthGain: 0.5,
+}

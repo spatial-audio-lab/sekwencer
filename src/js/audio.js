@@ -1,6 +1,6 @@
 // Silnik audio (na żywo) + render offline (nagrywanie) + enkoder WAV.
-import { state, MAX_DUR } from './state.js'
-import { computePoint, stepTrajectory } from './math.js'
+import { state, MAX_DUR, DISTANCE_CONFIG, SYNTH_FILTER_CONFIG, EXPORT_LEVELS } from './state.js'
+import { computePoint, stepTrajectory, calculateDistanceGain } from './math.js'
 
 const SOURCE_FADE_IN = 0.02
 const SOURCE_FADE_OUT = 0.025
@@ -16,14 +16,14 @@ export async function ensureAudio() {
   state.ctx = ctx
   state.panner = new PannerNode(ctx, {
     panningModel: 'HRTF',
-    distanceModel: 'inverse',
+    distanceModel: DISTANCE_CONFIG.model,
   })
-  state.panner.refDistance = 5
-  state.panner.maxDistance = 100
-  state.panner.rolloffFactor = 0.35
+  state.panner.refDistance = DISTANCE_CONFIG.refDistance
+  state.panner.maxDistance = DISTANCE_CONFIG.maxDistance
+  state.panner.rolloffFactor = DISTANCE_CONFIG.rolloffFactor
   state.filter = ctx.createBiquadFilter()
-  state.filter.type = 'lowpass'
-  state.filter.frequency.value = 1000
+  state.filter.type = SYNTH_FILTER_CONFIG.type
+  state.filter.frequency.value = SYNTH_FILTER_CONFIG.frequency
   state.gain = ctx.createGain()
   state.gain.gain.value = 0
   state.filter.connect(state.panner)
@@ -116,21 +116,6 @@ export function buildSource() {
 }
 
 // ===== NAGRYWANIE =====
-function oscSample(type, ph) {
-  const x = ph - Math.floor(ph)
-  switch (type) {
-    case 'sine':
-      return Math.sin(2 * Math.PI * x)
-    case 'square':
-      return x < 0.5 ? 1 : -1
-    case 'sawtooth':
-      return 2 * x - 1
-    case 'triangle':
-    default:
-      return 4 * Math.abs(x - 0.5) - 1
-  }
-}
-
 // Symuluje przebieg parametru t w czasie DOKŁADNIE tym samym krokiem (stepTrajectory
 // z math.js), którego używa podgląd na żywo w ui.js#update — zapewnia, że eksportowany
 // WAV brzmi identycznie jak to, co słychać podczas odtwarzania, także dla figur
@@ -141,6 +126,9 @@ function oscSample(type, ph) {
 // przesuwa t) — pętla i tak zatrzyma się po czasie odpowiadającym ~1.2×MAX_DUR,
 // a poniższy check `dur > MAX_DUR` zgłosi ten sam błąd co poprzednio przy prędkości 0.
 function buildTimeSchedule(totalAngle, dtStep) {
+  if (state.speed <= 0) {
+    throw new Error('Prędkość musi być większa od 0 m/s, aby wygenerować nagranie w ruchu.')
+  }
   const maxSteps = Math.ceil((MAX_DUR * 1.2) / dtStep)
   const ts = [0]
   const ta = [0]
@@ -164,15 +152,16 @@ export async function renderBinaural(reps, sr) {
   const oac = new OfflineAudioContext(2, len, sr)
   const panner = new PannerNode(oac, {
     panningModel: 'HRTF',
-    distanceModel: 'inverse',
+    distanceModel: DISTANCE_CONFIG.model,
   })
-  panner.refDistance = 5
-  panner.maxDistance = 100
-  panner.rolloffFactor = 0.35
+  panner.refDistance = DISTANCE_CONFIG.refDistance
+  panner.maxDistance = DISTANCE_CONFIG.maxDistance
+  panner.rolloffFactor = DISTANCE_CONFIG.rolloffFactor
   const gain = oac.createGain()
-  gain.gain.value = 0.5
+  gain.gain.value = EXPORT_LEVELS.synthGain
   let src
   if (state.mode === 'file' && state.buffer) {
+    gain.gain.value = EXPORT_LEVELS.fileGain
     src = oac.createBufferSource()
     src.buffer = state.buffer
     src.loop = true
@@ -182,8 +171,8 @@ export async function renderBinaural(reps, sr) {
     o.type = state.waveform
     o.frequency.value = 140
     const f = oac.createBiquadFilter()
-    f.type = 'lowpass'
-    f.frequency.value = 1000
+    f.type = SYNTH_FILTER_CONFIG.type
+    f.frequency.value = SYNTH_FILTER_CONFIG.frequency
     o.connect(f)
     f.connect(panner)
     src = o
@@ -221,8 +210,10 @@ export async function renderAmbix(reps, sr) {
     const frac = t1 > t0 ? Math.min(1, Math.max(0, (time - t0) / (t1 - t0))) : 0
     return schedule.ta[segIdx] + (schedule.ta[segIdx + 1] - schedule.ta[segIdx]) * frac
   }
-  const mono = new Float32Array(N)
+
+  let mono
   if (state.mode === 'file' && state.buffer) {
+    mono = new Float32Array(N)
     const b = state.buffer
     const srcSR = b.sampleRate
     const chN = b.numberOfChannels
@@ -233,13 +224,29 @@ export async function renderAmbix(reps, sr) {
       const idx = Math.floor((i * srcSR) / sr) % L
       let s = 0
       for (let c = 0; c < chN; c++) s += chans[c][idx]
-      mono[i] = (s / chN) * 0.9
+      // Zrównany poziom z renderBinaural (EXPORT_LEVELS.fileGain = 0.5)
+      mono[i] = (s / chN) * EXPORT_LEVELS.fileGain
     }
   } else {
-    const freq = 140
-    for (let i = 0; i < N; i++)
-      mono[i] = oscSample(state.waveform, (i / sr) * freq) * 0.5
+    // Generowanie syntezy przez OfflineAudioContext z filtrem SYNTH_FILTER_CONFIG (1000 Hz lowpass)
+    // i wzmocnieniem EXPORT_LEVELS.synthGain — identyczny tor i barwa co w renderBinaural i na żywo.
+    const synthCtx = new OfflineAudioContext(1, N, sr)
+    const o = synthCtx.createOscillator()
+    o.type = state.waveform
+    o.frequency.value = 140
+    const f = synthCtx.createBiquadFilter()
+    f.type = SYNTH_FILTER_CONFIG.type
+    f.frequency.value = SYNTH_FILTER_CONFIG.frequency
+    const g = synthCtx.createGain()
+    g.gain.value = EXPORT_LEVELS.synthGain
+    o.connect(f)
+    f.connect(g)
+    g.connect(synthCtx.destination)
+    o.start(0)
+    const rendered = await synthCtx.startRendering()
+    mono = rendered.getChannelData(0)
   }
+
   const W = new Float32Array(N)
   const Y = new Float32Array(N)
   const Z = new Float32Array(N)
@@ -255,7 +262,9 @@ export async function renderAmbix(reps, sr) {
     ax /= len
     ay /= len
     az /= len
-    const s = mono[i]
+    // Tłumienie odległości wspólnym modelem z PannerNode (DISTANCE_CONFIG)
+    const distGain = calculateDistanceGain(len)
+    const s = mono[i] * distGain
     W[i] = s
     Y[i] = s * ay
     Z[i] = s * az

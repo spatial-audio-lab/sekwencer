@@ -10,6 +10,7 @@ import http from 'http'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { getBrowserLaunchOptions } from './harness-utils.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
@@ -23,7 +24,7 @@ const server = http.createServer((req, res) => {
   // Layout GitHub Pages: root = "portal", apka pod /sekwencer/ (tu: docs/ repo)
   if (urlPath.startsWith('/sekwencer/')) urlPath = urlPath.slice('/sekwencer'.length)
   if (urlPath === '/' || urlPath === '') urlPath = '/index.html'
-  const filePath = path.join(root, 'scripts', 'render', urlPath)
+  const filePath = path.join(root, 'docs', urlPath)
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); res.end('404'); return }
     const ext = path.extname(filePath)
@@ -34,9 +35,7 @@ const server = http.createServer((req, res) => {
 
 await new Promise((r) => server.listen(PORT, r))
 
-const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-})
+const browser = await chromium.launch(getBrowserLaunchOptions())
 const page = await browser.newPage({ viewport: { width: 1440, height: 860 }, deviceScaleFactor: 2 })
 
 const consoleErrors = []

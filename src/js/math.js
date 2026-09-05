@@ -1,5 +1,5 @@
 // Matematyka trajektorii — przeniesione 1:1 z poprzedniego index.html.
-import { state } from './state.js'
+import { state, DISTANCE_CONFIG } from './state.js'
 
 export const Math3D = {
   rotateX(p, angle) {
@@ -76,4 +76,11 @@ export function stepTrajectory(t, dt, speed, direction) {
   if (speed <= 0) return t
   const metric = trajectoryMetric(t)
   return t + direction * (speed * dt) / metric
+}
+
+// Model tłumienia odległości (inverse) — JEDNA implementacja współdzielona
+// między PannerNode i eksportem AmbiX (Zasada 2: jedna wielkość liczona raz).
+export function calculateDistanceGain(dist, config = DISTANCE_CONFIG) {
+  const d = Math.max(config.refDistance, Math.min(dist, config.maxDistance))
+  return config.refDistance / (config.refDistance + config.rolloffFactor * (d - config.refDistance))
 }

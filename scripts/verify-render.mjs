@@ -4,8 +4,9 @@ import http from 'node:http'
 import fs from 'node:fs'
 import path from 'node:path'
 import { chromium } from 'playwright'
+import { getBrowserLaunchOptions } from './harness-utils.mjs'
 
-const DIST = path.resolve('scripts/render')
+const DIST = path.resolve('docs')
 const PORT = 4174
 const MIME = {
   '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
@@ -23,7 +24,7 @@ const server = http.createServer((req, res) => {
 })
 await new Promise((r) => server.listen(PORT, r))
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' })
+const browser = await chromium.launch(getBrowserLaunchOptions())
 const page = await browser.newPage({ viewport: { width: 1440, height: 860 }, deviceScaleFactor: 2 })
 const errors = []
 page.on('pageerror', (e) => errors.push(e.message))

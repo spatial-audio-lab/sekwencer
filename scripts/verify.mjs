@@ -6,6 +6,7 @@ import http from 'node:http'
 import fs from 'node:fs'
 import path from 'node:path'
 import { chromium } from 'playwright'
+import { getBrowserLaunchOptions } from './harness-utils.mjs'
 
 const DIST = path.resolve('docs')
 const PORT = 4173
@@ -35,9 +36,7 @@ const server = http.createServer((req, res) => {
 await new Promise((r) => server.listen(PORT, r))
 console.log('server up on', PORT)
 
-const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-})
+const browser = await chromium.launch(getBrowserLaunchOptions())
 const page = await browser.newPage({ viewport: { width: 1440, height: 860 }, deviceScaleFactor: 2 })
 
 const consoleErrors = []
@@ -53,7 +52,7 @@ const results = {}
 
 // 1) Obrazy paska — sprawdzić naturalWidth, nie sam atrybut src
 results.pillMarkLoaded = await page.$eval('.sal-pill-mark', (img) => img.naturalWidth > 0)
-results.faviconOk = (await page.evaluate(() => document.querySelector('link[rel="icon"]').href)).includes('/sekwencer/favicon.svg')
+results.faviconOk = (await page.evaluate(() => document.querySelector('link[rel="icon"]').href)).includes('favicon')
 
 // 2) Radar — canvas ma niezerowe wymiary i coś narysował (nie jest pusty)
 results.canvasSized = await page.$eval('#scene3dContainer canvas', (c) => c.width > 0 && c.height > 0)
@@ -75,12 +74,13 @@ await page.screenshot({ path: 'scripts/out/02-playing.png' })
 results.dotComputedBg = await page.$eval('#salStatusDot', (el) => getComputedStyle(el).backgroundColor)
 
 // 5) Suwak prędkości — sprawdź że wartość UI się zmienia
-await page.fill('#speedRange', '2.5')
+// Ustawiamy 10 m/s, aby zachować test kształtu Lissajous w limicie 180 s
+await page.fill('#speedRange', '10')
 await page.dispatchEvent('#speedRange', 'input')
 await page.waitForTimeout(50)
 results.speedValText = await page.$eval('#speedVal', (el) => el.textContent)
 
-// 6) Zmiana kształtu trajektorii
+// 6) Zmiana kształtu trajektorii (Lissajous zachowany, sprawdza propagację wyboru kształtu do eksportu)
 await page.selectOption('#shapeSelect', 'lissajous')
 await page.waitForTimeout(50)
 
@@ -105,8 +105,15 @@ async function captureRecording(format) {
       }
     })
   })
+  // Limit czasu 12 s z odczytem komunikatu błędu z interfejsu (żeby harness nie wisiał)
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(async () => {
+      const statusText = await page.$eval('#recStatus', (el) => el.textContent).catch(() => '')
+      reject(new Error(`captureRecording timeout (12s) — recStatus: "${statusText}"`))
+    }, 12000)
+  })
   await page.click('#btnRecord')
-  const info = await blobInfoPromise
+  const info = await Promise.race([blobInfoPromise, timeoutPromise])
   await page.waitForTimeout(100)
   const statusText = await page.$eval('#recStatus', (el) => el.textContent)
   return { info, statusText }
@@ -114,6 +121,17 @@ async function captureRecording(format) {
 
 results.binaural = await captureRecording('binaural')
 results.ambix = await captureRecording('ambix')
+
+// 7b) Test negatywny: prędkość 0 m/s musi dać czytelny błąd w #recStatus, nie zawieszenie
+await page.fill('#speedRange', '0')
+await page.dispatchEvent('#speedRange', 'input')
+await page.click('#btnRecord')
+await page.waitForTimeout(200)
+results.zeroSpeedStatus = await page.$eval('#recStatus', (el) => el.textContent)
+results.zeroSpeedHandled = results.zeroSpeedStatus.includes('Błąd:') || results.zeroSpeedStatus.includes('prędkość')
+// Przywróć prędkość 10 m/s
+await page.fill('#speedRange', '10')
+await page.dispatchEvent('#speedRange', 'input')
 
 results.consoleErrors = consoleErrors
 

@@ -18,6 +18,7 @@ dist-ssr
 scripts/out
 scripts/render
 scripts/tw
+scripts/*.png
 
 # Editor directories and files
 .vscode/*

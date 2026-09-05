@@ -6,6 +6,7 @@ import http from 'http'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { getBrowserLaunchOptions } from './harness-utils.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
@@ -18,7 +19,7 @@ const server = http.createServer((req, res) => {
   let urlPath = decodeURIComponent(req.url.split('?')[0])
   if (urlPath.startsWith('/sekwencer/')) urlPath = urlPath.slice('/sekwencer'.length)
   if (urlPath === '/' || urlPath === '') urlPath = '/index.html'
-  const filePath = path.join(root, 'scripts', 'render', urlPath)
+  const filePath = path.join(root, 'docs', urlPath)
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); res.end('404'); return }
     res.writeHead(200, { 'Content-Type': mime[path.extname(filePath)] || 'application/octet-stream' })
@@ -27,7 +28,7 @@ const server = http.createServer((req, res) => {
 })
 await new Promise((r) => server.listen(PORT, r))
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' })
+const browser = await chromium.launch(getBrowserLaunchOptions())
 const page = await browser.newPage({ viewport: { width: 1440, height: 860 }, deviceScaleFactor: 2 })
 const pageErrors = []
 page.on('pageerror', (e) => pageErrors.push(String(e)))
@@ -56,11 +57,12 @@ check('panner na zywo: rolloffFactor=0.35', Math.abs(distModel.rolloffFactor - 0
 //    Mierzymy realny poziom sygnalu za pannerem (AnalyserNode), nie tylko brak wyjatku.
 const levelBefore = await page.evaluate(async () => {
   const st = window.__orbitaAudio
+  if (st.ctx.state === 'suspended') await st.ctx.resume()
   const analyser = st.ctx.createAnalyser()
   analyser.fftSize = 2048
   st.gain.connect(analyser)
   window.__testAnalyser = analyser
-  await new Promise((r) => setTimeout(r, 150))
+  await new Promise((r) => setTimeout(r, 250))
   const data = new Float32Array(analyser.fftSize)
   analyser.getFloatTimeDomainData(data)
   return Math.sqrt(data.reduce((s, v) => s + v * v, 0) / data.length)
@@ -180,6 +182,77 @@ check(
   'eksport ambix: czas trwania = reps*2*PI*size/speed (arc-length, nie omega())',
   Math.abs(ambixSync.actualDur - ambixSync.expectedDur) < 0.5 && !ambixSync.hasNaN,
   JSON.stringify(ambixSync),
+)
+
+// 8. NIEZMIENNIK ODLEGŁOŚCI: Stosunek RMS AmbiX do Binaural musi być taki sam
+//    dla źródła bliskiego (R=5) i dalekiego (R=35) — sprawdza, że oba tory dzielą
+//    tę samą krzywą tłumienia (DISTANCE_CONFIG, inverse).
+const distRatioCheck = await page.evaluate(async () => {
+  function rms(arr) {
+    let s = 0
+    for (let i = 0; i < arr.length; i++) s += arr[i] * arr[i]
+    return Math.sqrt(s / arr.length)
+  }
+
+  const sr = 8000
+  const sizeInput = document.getElementById('sizeRange')
+  const shapeInput = document.getElementById('shapeSelect')
+  shapeInput.value = 'circle'
+  shapeInput.dispatchEvent(new Event('change', { bubbles: true }))
+
+  // Blisko (R=5 m)
+  sizeInput.value = 5
+  sizeInput.dispatchEvent(new Event('input', { bubbles: true }))
+  const [L5, R5] = await window.__orbitaExport.renderBinaural(1, sr)
+  const [W5] = await window.__orbitaExport.renderAmbix(1, sr)
+  const rmsBin5 = Math.sqrt((rms(L5) ** 2 + rms(R5) ** 2) / 2)
+  const rmsAmbi5 = rms(W5)
+  const ratio5 = rmsAmbi5 / rmsBin5
+
+  // Daleko (R=35 m)
+  sizeInput.value = 35
+  sizeInput.dispatchEvent(new Event('input', { bubbles: true }))
+  const [L35, R35] = await window.__orbitaExport.renderBinaural(1, sr)
+  const [W35] = await window.__orbitaExport.renderAmbix(1, sr)
+  const rmsBin35 = Math.sqrt((rms(L35) ** 2 + rms(R35) ** 2) / 2)
+  const rmsAmbi35 = rms(W35)
+  const ratio35 = rmsAmbi35 / rmsBin35
+
+  // Spadek głośności w AmbiX (teoretycznie: 5 / (5 + 0.35 * 30) = 0.3225)
+  const ambiDrop = rmsAmbi35 / rmsAmbi5
+  const binDrop = rmsBin35 / rmsBin5
+
+  return { ratio5, ratio35, diffRatio: Math.abs(ratio35 - ratio5) / ratio5, ambiDrop, binDrop }
+})
+
+check(
+  'niezmiennik odległości: stosunek RMS AmbiX/Binaural zgodny przy R=5 i R=35 (błąd < 12%)',
+  distRatioCheck.diffRatio < 0.12 && distRatioCheck.ambiDrop < 0.4,
+  JSON.stringify(distRatioCheck),
+)
+
+// 9. FILTR BARWY: W eksporcie syntezy (sawtooth) fala w AmbiX przechodzi przez
+//    filtr dolnoprzepustowy (SYNTH_FILTER_CONFIG, 1000 Hz) — brak ostrych uskoków (max delta < 0.25)
+const filterCheck = await page.evaluate(async () => {
+  const wf = document.getElementById('waveformSelect')
+  wf.value = 'sawtooth'
+  wf.dispatchEvent(new Event('change', { bubbles: true }))
+  const [W] = await window.__orbitaExport.renderAmbix(1, 8000)
+  let maxDelta = 0
+  for (let i = 1; i < W.length; i++) {
+    const d = Math.abs(W[i] - W[i - 1])
+    if (d > maxDelta) maxDelta = d
+  }
+  // Reset do domyślnego triangle
+  wf.value = 'triangle'
+  wf.dispatchEvent(new Event('change', { bubbles: true }))
+  return { maxDelta }
+})
+
+check(
+  'filtr dolnoprzepustowy 1000 Hz aktywny w AmbiX (sawtooth ma wygładzone zbocza: max delta < 0.25)',
+  filterCheck.maxDelta < 0.25,
+  JSON.stringify(filterCheck),
 )
 
 check('0 pageerror w calym scenariuszu', pageErrors.length === 0, pageErrors.join(' | '))
