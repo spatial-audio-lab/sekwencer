@@ -55,6 +55,9 @@ check('panner na zywo: rolloffFactor=0.35', Math.abs(distModel.rolloffFactor - 0
 
 // 2. BUG SYNTEZY: przelaczanie ksztaltu fali w trakcie odtwarzania nie moze wyciszac dzwieku.
 //    Mierzymy realny poziom sygnalu za pannerem (AnalyserNode), nie tylko brak wyjatku.
+//    Pomiar czeka na SYGNAL, nie na staly czas. Kontekst audio jest tuz po resume(),
+//    wiec pierwszy odczyt analizatora potrafi zwrocic same zera — zmierzone: 1 na 5
+//    przebiegow dawalo RMS dokladnie 0 i FAIL, mimo ze aplikacja gra poprawnie.
 const levelBefore = await page.evaluate(async () => {
   const st = window.__orbitaAudio
   if (st.ctx.state === 'suspended') await st.ctx.resume()
@@ -62,12 +65,22 @@ const levelBefore = await page.evaluate(async () => {
   analyser.fftSize = 2048
   st.gain.connect(analyser)
   window.__testAnalyser = analyser
-  await new Promise((r) => setTimeout(r, 250))
   const data = new Float32Array(analyser.fftSize)
-  analyser.getFloatTimeDomainData(data)
-  return Math.sqrt(data.reduce((s, v) => s + v * v, 0) / data.length)
+  const zmierzRms = () => {
+    analyser.getFloatTimeDomainData(data)
+    return Math.sqrt(data.reduce((s, v) => s + v * v, 0) / data.length)
+  }
+  const start = performance.now()
+  let rms = 0
+  while (performance.now() - start < 2000) {
+    await new Promise((r) => setTimeout(r, 50))
+    rms = zmierzRms()
+    if (rms > 0.001) break
+  }
+  return { rms, ms: Math.round(performance.now() - start) }
 })
-check('sygnal obecny PRZED zmiana ksztaltu fali (RMS > 0.001)', levelBefore > 0.001, levelBefore)
+check('sygnal obecny PRZED zmiana ksztaltu fali (RMS > 0.001)', levelBefore.rms > 0.001, `RMS=${levelBefore.rms} po ${levelBefore.ms} ms`)
+if (levelBefore.ms > 60) console.log(`     sygnal pojawil sie dopiero po ${levelBefore.ms} ms — staly odczyt po 250 ms bywal za wczesny`)
 
 // Zmien ksztalt fali 4x pod rzad (stres-test), poczekaj DLUZEJ niz okno fade-out+cleanup (~45ms)
 for (const wf of ['sine', 'square', 'sawtooth', 'triangle']) {

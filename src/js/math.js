@@ -80,7 +80,16 @@ export function stepTrajectory(t, dt, speed, direction) {
 
 // Model tłumienia odległości (inverse) — JEDNA implementacja współdzielona
 // między PannerNode i eksportem AmbiX (Zasada 2: jedna wielkość liczona raz).
+//
+// maxDistance NIE występuje w tym wzorze i to nie jest przeoczenie: w Web Audio
+// przycina odległość wyłącznie model 'linear'. Zmierzone na prawdziwym PannerNode
+// (HRTF, refDistance 5, rolloff 0.35, kierunek stały, RMS znormalizowany do 5 m):
+//   150 m -> 0.08969, a wzór z przycięciem twierdziłby 0.13072
+//   300 m -> 0.04619, a wzór z przycięciem twierdziłby 0.13072
+// Dziś to nieosiągalne (najdalszy punkt to narożnik kwadratu przy rozmiarze 55,
+// czyli 77,8 m), ale przycięcie wróciłoby jako rozjazd torów przy większej figurze.
+// maxDistance zostaje w DISTANCE_CONFIG, bo potrzebuje go sam PannerNode.
 export function calculateDistanceGain(dist, config = DISTANCE_CONFIG) {
-  const d = Math.max(config.refDistance, Math.min(dist, config.maxDistance))
+  const d = Math.max(config.refDistance, dist)
   return config.refDistance / (config.refDistance + config.rolloffFactor * (d - config.refDistance))
 }

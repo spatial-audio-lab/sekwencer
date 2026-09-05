@@ -122,9 +122,11 @@ export function buildSource() {
 // o nierównym rozkładzie krzywizny (kwadrat, lemniskata, węzeł Lissajous), gdzie stała
 // prędkość kątowa (dawne omega()) dawałaby inny przebieg niż stała prędkość liniowa.
 // totalAngle to sumaryczny kąt (parametr t) do przebycia dla `reps` powtórzeń figury;
-// maxSteps to twarde zabezpieczenie, gdyby prędkość=0 (wtedy stepTrajectory nie
-// przesuwa t) — pętla i tak zatrzyma się po czasie odpowiadającym ~1.2×MAX_DUR,
-// a poniższy check `dur > MAX_DUR` zgłosi ten sam błąd co poprzednio przy prędkości 0.
+// Prędkość <= 0 odpada od razu na wejściu (rzucany wyjątek niżej) — bez tego
+// stepTrajectory nie przesuwa t i pętla kręci się do wyczerpania maxSteps.
+// maxSteps zostaje jako zabezpieczenie na POZOSTAŁE przypadki zwyrodniałe (np. gdyby
+// metryka trajektorii wyszła bliska zeru): pętla zatrzyma się po czasie ~1.2×MAX_DUR,
+// a check `dur > MAX_DUR` niżej zgłosi to jako zbyt długie nagranie.
 function buildTimeSchedule(totalAngle, dtStep) {
   if (state.speed <= 0) {
     throw new Error('Prędkość musi być większa od 0 m/s, aby wygenerować nagranie w ruchu.')

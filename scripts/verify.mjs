@@ -52,7 +52,15 @@ const results = {}
 
 // 1) Obrazy paska — sprawdzić naturalWidth, nie sam atrybut src
 results.pillMarkLoaded = await page.$eval('.sal-pill-mark', (img) => img.naturalWidth > 0)
-results.faviconOk = (await page.evaluate(() => document.querySelector('link[rel="icon"]').href)).includes('favicon')
+// Sam ksztalt adresu niczego nie dowodzi: '.includes(favicon)' przechodzi takze
+// wtedy, gdy plik oddaje 404, a asercja na sztywna sciezke '/sekwencer/favicon.svg'
+// klamala po przejsciu na app-assets/favicon-<suma>.svg. Mierzymy odpowiedz serwera.
+results.faviconOk = await page.evaluate(async () => {
+  const href = document.querySelector('link[rel="icon"]').href
+  const odp = await fetch(href)
+  const dane = await odp.blob()
+  return odp.ok && dane.size > 0
+})
 
 // 2) Radar — canvas ma niezerowe wymiary i coś narysował (nie jest pusty)
 results.canvasSized = await page.$eval('#scene3dContainer canvas', (c) => c.width > 0 && c.height > 0)
